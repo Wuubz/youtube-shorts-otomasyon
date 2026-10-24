@@ -110,7 +110,8 @@ jobs:
           ARGS=()
           if [ "$RUN_CHANNEL" = "all_enabled" ]; then ARGS+=(--all-enabled); else ARGS+=(--channel "$RUN_CHANNEL"); fi
           if [ "$RUN_SLOT" != "none" ]; then ARGS+=(--schedule-slot "$RUN_SLOT"); fi
-          if [ "$RUN_DRY_RUN" = "true" ]; then ARGS+=(--dry-run); fi
+          # Dry-run'da üretilen konu yüklenmediği için geçmişe yazılmaz (history.json değişmez, commit adımı atlanır)
+          if [ "$RUN_DRY_RUN" = "true" ]; then ARGS+=(--dry-run --no-history); fi
           python main.py "${ARGS[@]}"
 
       - name: Upload dry-run videos as artifact
