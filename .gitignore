@@ -1,0 +1,17 @@
+.env
+client_secret*.json
+temp/
+output/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Üretilen telifsiz ambiyans müzikleri depoya DAHİL edilir (GitHub Actions bunları kullanır)
+!assets/music/
+!assets/music/**/
+!assets/music/**/*.mp3
+
+# Geçici token/log dosyaları ve IDE ayarları
+token*.log
+.vscode/

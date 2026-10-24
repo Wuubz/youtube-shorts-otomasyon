@@ -1,0 +1,136 @@
+name: Daily YouTube Shorts Automation
+
+on:
+  schedule:
+    - cron: "30 9 * * *"   # 09:30 UTC (TSİ 12:30) -> slot 0: 12:00-16:00 UTC arası yayın saatleri
+    - cron: "30 17 * * *"  # 17:30 UTC (TSİ 20:30) -> slot 1: 19:00-01:00 UTC arası yayın saatleri
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Çalıştırılacak kanal"
+        type: choice
+        default: all_enabled
+        options:
+          - all_enabled
+          - ch1_cosmic_whatif
+          - ch2_dark_history
+          - ch3_dark_psychology
+          - ch4_epic_mythology
+          - ch5_midnight_horror
+          - ch6_universal_stories
+      schedule_slot:
+        description: "Yayın slotu (0 = 1. saat, 1 = 2. saat, immediate = hemen yayınla)"
+        type: choice
+        default: immediate
+        options: ["immediate", "0", "1"]
+      dry_run:
+        description: "Dry run (video üret, YouTube'a yükleme)"
+        type: boolean
+        default: false
+
+# Aynı anda iki çalışma history.json üzerinde çakışmasın
+concurrency:
+  group: daily-shorts
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  produce-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350   # Pollinations ücretsiz limiti (45 sn/görsel) nedeniyle kanal başına ~8 dk sürer
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+      YT_CH1_CLIENT_ID: ${{ secrets.YT_CH1_CLIENT_ID }}
+      YT_CH1_CLIENT_SECRET: ${{ secrets.YT_CH1_CLIENT_SECRET }}
+      YT_CH1_REFRESH_TOKEN: ${{ secrets.YT_CH1_REFRESH_TOKEN }}
+      # Kota koruması (proje başına günlük 10.000 birim = en fazla 6 yükleme):
+      # CH1-CH3 aynı Google Cloud projesini (1. proje), CH4-CH6 ikinci projeyi kullanır.
+      # Kanal kendi CLIENT_ID/SECRET secret'ını tanımlamadıysa projenin ilk kanalınınki kullanılır.
+      YT_CH2_CLIENT_ID: ${{ secrets.YT_CH2_CLIENT_ID || secrets.YT_CH1_CLIENT_ID }}
+      YT_CH2_CLIENT_SECRET: ${{ secrets.YT_CH2_CLIENT_SECRET || secrets.YT_CH1_CLIENT_SECRET }}
+      YT_CH2_REFRESH_TOKEN: ${{ secrets.YT_CH2_REFRESH_TOKEN }}
+      YT_CH3_CLIENT_ID: ${{ secrets.YT_CH3_CLIENT_ID || secrets.YT_CH1_CLIENT_ID }}
+      YT_CH3_CLIENT_SECRET: ${{ secrets.YT_CH3_CLIENT_SECRET || secrets.YT_CH1_CLIENT_SECRET }}
+      YT_CH3_REFRESH_TOKEN: ${{ secrets.YT_CH3_REFRESH_TOKEN }}
+      YT_CH4_CLIENT_ID: ${{ secrets.YT_CH4_CLIENT_ID }}
+      YT_CH4_CLIENT_SECRET: ${{ secrets.YT_CH4_CLIENT_SECRET }}
+      YT_CH4_REFRESH_TOKEN: ${{ secrets.YT_CH4_REFRESH_TOKEN }}
+      YT_CH5_CLIENT_ID: ${{ secrets.YT_CH5_CLIENT_ID || secrets.YT_CH4_CLIENT_ID }}
+      YT_CH5_CLIENT_SECRET: ${{ secrets.YT_CH5_CLIENT_SECRET || secrets.YT_CH4_CLIENT_SECRET }}
+      YT_CH5_REFRESH_TOKEN: ${{ secrets.YT_CH5_REFRESH_TOKEN }}
+      YT_CH6_CLIENT_ID: ${{ secrets.YT_CH6_CLIENT_ID || secrets.YT_CH4_CLIENT_ID }}
+      YT_CH6_CLIENT_SECRET: ${{ secrets.YT_CH6_CLIENT_SECRET || secrets.YT_CH4_CLIENT_SECRET }}
+      YT_CH6_REFRESH_TOKEN: ${{ secrets.YT_CH6_REFRESH_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install FFmpeg and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-liberation fonts-dejavu-core
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Resolve run parameters
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CRON: ${{ github.event.schedule }}
+          IN_CHANNEL: ${{ inputs.channel }}
+          IN_SLOT: ${{ inputs.schedule_slot }}
+          IN_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            if [ "$CRON" = "30 9 * * *" ]; then SLOT=0; else SLOT=1; fi
+            CHANNEL=all_enabled
+            DRY_RUN=false
+          else
+            SLOT="${IN_SLOT:-immediate}"
+            if [ "$SLOT" = "immediate" ]; then SLOT=none; fi
+            CHANNEL="${IN_CHANNEL:-all_enabled}"
+            DRY_RUN="${IN_DRY_RUN:-false}"
+          fi
+          echo "RUN_SLOT=$SLOT" >> "$GITHUB_ENV"
+          echo "RUN_CHANNEL=$CHANNEL" >> "$GITHUB_ENV"
+          echo "RUN_DRY_RUN=$DRY_RUN" >> "$GITHUB_ENV"
+
+      - name: Generate and upload Shorts
+        run: |
+          ARGS=()
+          if [ "$RUN_CHANNEL" = "all_enabled" ]; then ARGS+=(--all-enabled); else ARGS+=(--channel "$RUN_CHANNEL"); fi
+          if [ "$RUN_SLOT" != "none" ]; then ARGS+=(--schedule-slot "$RUN_SLOT"); fi
+          if [ "$RUN_DRY_RUN" = "true" ]; then ARGS+=(--dry-run); fi
+          python main.py "${ARGS[@]}"
+
+      - name: Upload dry-run videos as artifact
+        if: always() && env.RUN_DRY_RUN == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-output
+          path: output/
+          if-no-files-found: ignore
+
+      - name: Commit updated history
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/history.json
+          if git diff --cached --quiet; then
+            echo "history.json değişmedi, commit atlanıyor."
+          else
+            git commit -m "chore: update video history [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
