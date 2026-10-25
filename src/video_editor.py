@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import logging
+import os
 import random
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -84,22 +86,25 @@ def _render_clips(
 ) -> list[Path]:
     """Her görseli kendi ses süresi (+ geçiş payı) kadar zoompan'lı klibe çevirir."""
     effects = _effect_sequence(len(images))
-    clips: list[Path] = []
     last = len(images) - 1
-    for i, image in enumerate(images):
+
+    def render_one(i: int) -> Path:
         frames = scene_frames[i] + (extend if i < last else 0)
-        effect = effects[i]
         clip = work_dir / f"clip_{i}.mp4"
         _run([
-            "ffmpeg", "-y", "-loglevel", "error", "-i", str(image),
-            "-vf", _motion_filter(effect, frames),
+            "ffmpeg", "-y", "-loglevel", "error", "-i", str(images[i]),
+            "-vf", _motion_filter(effects[i], frames),
             "-frames:v", str(frames), "-r", str(FPS),
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "17", "-pix_fmt", "yuv420p",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "17", "-pix_fmt", "yuv420p",
             str(clip),
         ])
-        log.info("Klip %d hazır (%s, %d kare)", i, effect, frames)
-        clips.append(clip)
-    return clips
+        log.info("Klip %d hazır (%s, %d kare)", i, effects[i], frames)
+        return clip
+
+    # zoompan tek iş parçacıklıdır; klipler paralel üretilerek Actions dakikaları ve süre kısaltılır
+    workers = max(1, min(os.cpu_count() or 1, 4))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return list(pool.map(render_one, range(len(images))))
 
 
 def _video_graph(n: int, scene_frames: list[int], use_xfade: bool, ass_name: str) -> list[str]:
@@ -151,7 +156,7 @@ def _assemble(
     cmd += [
         "-filter_complex", ";".join(graph),
         "-map", "[v]", "-map", "[a]",
-        "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p", "-r", str(FPS),
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", str(FPS),
         "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart",
         "-t", f"{total:.3f}", str(output.resolve()),
     ]

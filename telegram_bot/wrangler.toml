@@ -1,0 +1,21 @@
+name = "shorts-bot"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[triggers]
+# 5 dakikada bir: zamanlanmış videoların "yayında" bildirimi · 21:00 UTC (00:00 TSİ): günlük özet ve sayaç sıfırlama
+crons = ["*/5 * * * *", "0 21 * * *"]
+
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_KV_ID"
+
+[vars]
+CHANNELS = '''[
+{"id":"ch1_cosmic_whatif","name":"Space Paradox","emoji":"🚀","yt":"UCjQrXuLJDdGtwyTXLph5SqQ"},
+{"id":"ch2_dark_history","name":"Forgotten Echoes","emoji":"🏛","yt":"UCnbTY6Er-VVAJFCG2uJG4Qg"},
+{"id":"ch3_dark_psychology","name":"Psych Decoded","emoji":"🧠","yt":"UCe-SbfHrS1TQyuOzrKgWdXA"},
+{"id":"ch4_epic_mythology","name":"Mythic Realms","emoji":"⚡","yt":"UCndpB1eXGuyofzLP_at1hyQ"},
+{"id":"ch5_midnight_horror","name":"Never Look Behind","emoji":"👻","yt":"UC1KOstqN_JDPCUrHUiGJ-kQ"},
+{"id":"ch6_universal_stories","name":"Pure Paws Stories","emoji":"🐾","yt":"UC8LGPb7zvhyjAZwJDx5Wh7A"}
+]'''

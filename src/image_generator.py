@@ -75,7 +75,8 @@ def _download(prompt: str, seed: int, dest_stem: Path, api_key: str | None = Non
     if response.status_code in (402, 429):  # ücretsiz katman: IP başına 45 sn'de 1 görsel
         match = _RETRY_AFTER_RE.search(response.text)
         if api_key and not match and "free limit" not in response.text.lower():
-            raise AuthError(f"HTTP {response.status_code} (anahtar bakiyesi/yetkisi yetersiz olabilir)")
+            detail = re.sub(r"\s+", " ", response.text)[:160].replace(api_key, "***")
+            raise AuthError(f"HTTP {response.status_code} (anahtar bakiyesi/yetkisi yetersiz): {detail}")
         raise RateLimitError(int(match.group(1)) + 2 if match else DEFAULT_RATE_WAIT)
     if response.status_code != 200:
         raise RuntimeError(f"HTTP {response.status_code}")

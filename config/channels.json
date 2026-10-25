@@ -13,6 +13,8 @@
       "publish_times_utc": ["13:30", "21:30"],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH1",
+      "display_name": "Space Paradox",
+      "youtube_channel_id": "UCjQrXuLJDdGtwyTXLph5SqQ",
       "visual_style_prompt": "cinematic space photography, ultra detailed nebulae and planets, dramatic volumetric lighting, deep blue and violet palette, photorealistic, 8k, IMAX quality",
       "sub_themes": [
         "Black holes and their strange physics",
@@ -63,6 +65,8 @@
       "publish_times_utc": ["14:00", "22:00"],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH2",
+      "display_name": "Forgotten Echoes",
+      "youtube_channel_id": "UCnbTY6Er-VVAJFCG2uJG4Qg",
       "visual_style_prompt": "dark cinematic historical painting style, ancient ruins, torchlit atmosphere, moody chiaroscuro lighting, desaturated earthy tones, ultra detailed, 8k",
       "sub_themes": [
         "Lost civilizations that vanished without a clear explanation",
@@ -113,6 +117,8 @@
       "publish_times_utc": ["12:30", "20:00"],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH3",
+      "display_name": "Psych Decoded",
+      "youtube_channel_id": "UCe-SbfHrS1TQyuOzrKgWdXA",
       "visual_style_prompt": "dark moody cinematic portrait, film noir lighting, deep shadows, high contrast, minimalist surreal composition, dramatic rim light, 8k",
       "sub_themes": [
         "Manipulation tactics and how to recognize them",
@@ -163,6 +169,8 @@
       "publish_times_utc": ["14:30", "22:30"],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH4",
+      "display_name": "Mythic Realms",
+      "youtube_channel_id": "UCndpB1eXGuyofzLP_at1hyQ",
       "visual_style_prompt": "epic fantasy concept art, mythological gods and heroes, golden dramatic lighting, grand scale, highly detailed oil painting style, 8k",
       "sub_themes": [
         "Greek gods and their bitter rivalries",
@@ -213,6 +221,8 @@
       "publish_times_utc": ["16:00", "01:00"],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH5",
+      "display_name": "Never Look Behind",
+      "youtube_channel_id": "UC1KOstqN_JDPCUrHUiGJ-kQ",
       "visual_style_prompt": "dark horror cinematic scene, eerie fog, low-key lighting, unsettling atmosphere, desaturated colors with faint red accents, film grain, 8k",
       "sub_themes": [
         "A haunted house and something living inside the walls",
@@ -262,6 +272,8 @@
       "publish_times_utc": ["12:00", "19:00"],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH6",
+      "display_name": "Pure Paws Stories",
+      "youtube_channel_id": "UC8LGPb7zvhyjAZwJDx5Wh7A",
       "visual_style_prompt": "warm heartwarming cinematic photography, soft golden hour lighting, adorable realistic animals, shallow depth of field, vivid natural colors, 8k",
       "sub_themes": [
         "A loyal dog waiting faithfully for its owner",

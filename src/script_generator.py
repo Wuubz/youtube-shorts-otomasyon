@@ -16,14 +16,25 @@ from src.config_loader import MAX_HISTORY_TOPICS, get_gemini_api_key
 
 log = logging.getLogger(__name__)
 
-# gemini-2.5-flash yeni hesaplara kapatıldı (404). GEMINI_MODEL ile ana model değiştirilebilir;
-# yoğunluk (503) gibi hatalarda her yeni denemede zincirdeki bir sonraki modele geçilir.
+# Ücretsiz katmanda kota MODEL BAŞINA tutulur; bu yüzden birden çok model zinciri günlük kapasiteyi katlar.
+# GEMINI_MODEL ile ana model değiştirilebilir. Günlük kotası dolan model o çalışmada bir daha denenmez.
 MODEL_CHAIN = list(dict.fromkeys(
-    [os.environ.get("GEMINI_MODEL", "").strip() or "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"]
+    [m for m in (
+        os.environ.get("GEMINI_MODEL", "").strip(),
+        "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
+        "gemini-3-flash-preview", "gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest",
+    ) if m]
 ))
-MAX_ATTEMPTS = 3
-BACKOFF_BASE_SECONDS = 4
+MAX_REQUESTS = 16               # bir senaryo için toplam istek tavanı
+TRANSIENT_TRIES = 3             # aynı modelde 503/bağlantı kopması için deneme
+CONTENT_TRIES = 2               # aynı modelde geçersiz içerik (kelime sayısı, şema) için deneme
+REQUEST_TIMEOUT_MS = 90_000     # takılan isteklerin dakikalarca beklemesini önler
 TEMPERATURE = 0.95
+_TRANSIENT_MARKERS = (
+    "503", "500", "502", "504", "UNAVAILABLE", "INTERNAL", "DEADLINE", "disconnected", "timed out",
+    "timeout", "ConnectError", "RemoteProtocol", "ReadError", "Connection",
+)
+_exhausted_models: set[str] = set()   # günlük kotası dolan modeller (süreç boyunca)
 
 SHORTS_SUFFIX = " #Shorts"
 MAX_TITLE_LENGTH = 70
@@ -216,9 +227,29 @@ def _finalize(raw: VideoScript, channel: dict[str, Any], past_topics: list[str])
     }
 
 
+def _classify_error(exc: Exception) -> tuple[str, float]:
+    """Hatayı ('daily_quota' | 'rate_limit' | 'transient' | 'content', bekleme sn) olarak sınıflar."""
+    text = str(exc)
+    if "429" in text or "RESOURCE_EXHAUSTED" in text:
+        if "PerDay" in text or "per day" in text.lower():
+            return "daily_quota", 0.0
+        match = re.search(r"retryDelay'?\"?:\s*'?\"?(\d+(?:\.\d+)?)s", text)
+        return "rate_limit", min(float(match.group(1)) if match else 30.0, 60.0)
+    if any(marker in text for marker in _TRANSIENT_MARKERS):
+        return "transient", 0.0
+    return "content", 0.0
+
+
 def generate_script(channel: dict[str, Any], past_topics: list[str]) -> dict[str, Any]:
-    """Kanal için yeni bir senaryo üretir; hatada 3 kez üstel bekleme ile dener."""
-    client = genai.Client(api_key=get_gemini_api_key())
+    """Kanal için yeni bir senaryo üretir.
+
+    Önce en iyi model denenir; 503/bağlantı hatasında aynı modelde kısa beklemeyle yeniden, günlük kotası
+    dolmuşsa (429) ya da hata sürüyorsa zincirdeki sonraki modele geçilir. İstekler zaman aşımına sahiptir.
+    """
+    client = genai.Client(
+        api_key=get_gemini_api_key(),
+        http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_MS),
+    )
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=VideoScript,
@@ -226,24 +257,47 @@ def generate_script(channel: dict[str, Any], past_topics: list[str]) -> dict[str
     )
 
     last_error: Exception | None = None
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        model = MODEL_CHAIN[min(attempt - 1, len(MODEL_CHAIN) - 1)]
-        direction = _pick_direction(channel)
-        prompt = _build_prompt(channel, past_topics, direction)
-        log.info("[%s] Yaratıcı yön: %s", channel["id"], direction or "(tanımsız)")
-        try:
-            response = client.models.generate_content(model=model, contents=prompt, config=config)
-            if not response.text:
-                raise RuntimeError("Gemini boş yanıt döndürdü (içerik filtrelenmiş olabilir)")
-            script = _finalize(VideoScript.model_validate_json(response.text), channel, past_topics)
-            log.info(
-                "[%s] Senaryo hazır: '%s' (%d sahne)",
-                channel["id"], script["title"], len(script["scenes"]),
-            )
-            return script
-        except Exception as exc:  # API, ağ, şema ve doğrulama hataları aynı şekilde yeniden denenir
-            last_error = exc
-            log.warning("[%s] Senaryo denemesi %d/%d (%s) başarısız: %s", channel["id"], attempt, MAX_ATTEMPTS, model, exc)
-            if attempt < MAX_ATTEMPTS:
-                time.sleep(BACKOFF_BASE_SECONDS * 2 ** (attempt - 1))
-    raise RuntimeError(f"Senaryo {MAX_ATTEMPTS} denemede üretilemedi: {last_error}") from last_error
+    requests_made = 0
+    for model in MODEL_CHAIN:
+        if model in _exhausted_models:
+            continue
+        transient_tries = content_tries = rate_tries = 0
+        while requests_made < MAX_REQUESTS:
+            requests_made += 1
+            direction = _pick_direction(channel)  # içerik hatasında yeni deneme farklı yönle başlar
+            prompt = _build_prompt(channel, past_topics, direction)
+            log.info("[%s] Yaratıcı yön (%s): %s", channel["id"], model, direction or "(tanımsız)")
+            try:
+                response = client.models.generate_content(model=model, contents=prompt, config=config)
+                if not response.text:
+                    raise RuntimeError("Gemini boş yanıt döndürdü (içerik filtrelenmiş olabilir)")
+                script = _finalize(VideoScript.model_validate_json(response.text), channel, past_topics)
+                log.info(
+                    "[%s] Senaryo hazır: '%s' (%d sahne, %s)",
+                    channel["id"], script["title"], len(script["scenes"]), model,
+                )
+                return script
+            except Exception as exc:  # API, ağ, şema ve doğrulama hataları sınıflandırılır
+                last_error = exc
+                kind, wait = _classify_error(exc)
+                log.warning("[%s] Senaryo isteği (%s, %s) başarısız: %.220s", channel["id"], model, kind, exc)
+                if kind == "daily_quota":
+                    _exhausted_models.add(model)
+                    break
+                if kind == "rate_limit":
+                    rate_tries += 1
+                    if rate_tries > 2:
+                        break
+                    time.sleep(wait)
+                elif kind == "transient":
+                    transient_tries += 1
+                    if transient_tries >= TRANSIENT_TRIES:
+                        break
+                    time.sleep(5 * 3 ** (transient_tries - 1))   # 5 sn, 15 sn
+                else:
+                    content_tries += 1
+                    if content_tries >= CONTENT_TRIES:
+                        break
+        if requests_made >= MAX_REQUESTS:
+            break
+    raise RuntimeError(f"Senaryo üretilemedi ({requests_made} istek): {last_error}") from last_error

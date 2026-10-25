@@ -2,8 +2,12 @@ name: Daily YouTube Shorts Automation
 
 on:
   schedule:
-    - cron: "30 9 * * *"   # 09:30 UTC (TSİ 12:30) -> slot 0: 12:00-16:00 UTC arası yayın saatleri
-    - cron: "30 17 * * *"  # 17:30 UTC (TSİ 20:30) -> slot 1: 19:00-01:00 UTC arası yayın saatleri
+    # GitHub zamanlayıcısı 2-5 saat geç tetikleyebiliyor; bu yüzden çalışmalar yayın saatlerinden ~7 saat önce
+    # başlatılır. Yedek cron'lar yalnızca atlanan/çöken kanalları üretir (bugün zaten üretilen slot atlanır).
+    - cron: "0 5 * * *"     # slot 0 (yayınlar 12:00-16:00 UTC)
+    - cron: "0 8 * * *"     # slot 0 yedek
+    - cron: "30 12 * * *"   # slot 1 (yayınlar 19:00-01:00 UTC)
+    - cron: "30 15 * * *"   # slot 1 yedek
   workflow_dispatch:
     inputs:
       channel:
@@ -39,7 +43,7 @@ permissions:
 jobs:
   produce-and-upload:
     runs-on: ubuntu-latest
-    timeout-minutes: 350   # Pollinations ücretsiz limiti (45 sn/görsel) nedeniyle kanal başına ~8 dk sürer
+    timeout-minutes: 100   # takılan çalışma dakika kotasını yemesin
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
@@ -64,6 +68,10 @@ jobs:
       YT_CH6_CLIENT_ID: ${{ secrets.YT_CH6_CLIENT_ID || secrets.YT_CH4_CLIENT_ID }}
       YT_CH6_CLIENT_SECRET: ${{ secrets.YT_CH6_CLIENT_SECRET || secrets.YT_CH4_CLIENT_SECRET }}
       YT_CH6_REFRESH_TOKEN: ${{ secrets.YT_CH6_REFRESH_TOKEN }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      WORKER_URL: ${{ secrets.WORKER_URL }}
+      WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
 
     steps:
       - name: Checkout
@@ -75,14 +83,6 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install FFmpeg and fonts
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-liberation fonts-dejavu-core
-
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt
-
       - name: Resolve run parameters
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -92,7 +92,10 @@ jobs:
           IN_DRY_RUN: ${{ inputs.dry_run }}
         run: |
           if [ "$EVENT_NAME" = "schedule" ]; then
-            if [ "$CRON" = "30 9 * * *" ]; then SLOT=0; else SLOT=1; fi
+            case "$CRON" in
+              "0 5 * * *"|"0 8 * * *") SLOT=0 ;;
+              *) SLOT=1 ;;
+            esac
             CHANNEL=all_enabled
             DRY_RUN=false
           else
@@ -105,9 +108,32 @@ jobs:
           echo "RUN_CHANNEL=$CHANNEL" >> "$GITHUB_ENV"
           echo "RUN_DRY_RUN=$DRY_RUN" >> "$GITHUB_ENV"
 
-      - name: Generate and upload Shorts
+      - name: Check pending channels
+        id: pending
         run: |
-          ARGS=()
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            python scripts/pending_check.py "$RUN_SLOT"
+          else
+            echo "count=1" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+
+      - name: Install FFmpeg and fonts
+        if: steps.pending.outputs.count != '0'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-liberation fonts-dejavu-core
+
+      - name: Install Python dependencies
+        if: steps.pending.outputs.count != '0'
+        run: pip install -r requirements.txt
+
+      - name: Generate and upload Shorts
+        id: generate
+        if: steps.pending.outputs.count != '0'
+        run: |
+          ARGS=(--time-budget 75)
           if [ "$RUN_CHANNEL" = "all_enabled" ]; then ARGS+=(--all-enabled); else ARGS+=(--channel "$RUN_CHANNEL"); fi
           if [ "$RUN_SLOT" != "none" ]; then ARGS+=(--schedule-slot "$RUN_SLOT"); fi
           # Dry-run'da üretilen konu yüklenmediği için geçmişe yazılmaz (history.json değişmez, commit adımı atlanır)
@@ -122,16 +148,24 @@ jobs:
           path: output/
           if-no-files-found: ignore
 
-      - name: Commit updated history
+      - name: Commit updated state
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/history.json
+          git add data/history.json data/publish_log.json
           if git diff --cached --quiet; then
-            echo "history.json değişmedi, commit atlanıyor."
+            echo "Durum dosyaları değişmedi, commit atlanıyor."
           else
             git commit -m "chore: update video history [skip ci]"
             git pull --rebase origin "${GITHUB_REF_NAME}"
             git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      # main.py kanal hatalarını kendisi bildirir; bu adım yalnızca iptal/zaman aşımı ve kurulum hatalarını yakalar
+      - name: Telegram alert (workflow-level failure)
+        if: cancelled() || (failure() && steps.generate.conclusion != 'failure')
+        run: |
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"               -d chat_id="$TELEGRAM_CHAT_ID"               --data-urlencode "text=⚠️ Shorts iş akışı tamamlanamadı (iptal/zaman aşımı/kurulum hatası). https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"               > /dev/null || true
           fi

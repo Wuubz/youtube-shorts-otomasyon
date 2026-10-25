@@ -50,6 +50,20 @@ def compute_publish_at(channel: dict[str, Any], slot: int, now: datetime | None 
     Cron gecikmesiyle hedef saat 6 saate kadar geride kaldıysa ertesi güne atlanmaz (o günün kendi videosuyla
     çakışmasın diye); hedef şimdiden en az 15 dk ileride değilse now + 15 dk kullanılır.
     """
+    now = now or datetime.now(timezone.utc)
+    target = slot_target(channel, slot, now)
+    earliest = now.replace(microsecond=0) + MIN_LEAD_TIME + timedelta(seconds=1)
+    if target < earliest:
+        log.warning(
+            "%s: %s UTC yayın saati yakın/geçmiş; en erken uygun zamana (%s) çekildi",
+            channel["id"], channel["publish_times_utc"][slot], earliest.strftime(ISO_FORMAT),
+        )
+        target = earliest
+    return target.strftime(ISO_FORMAT)
+
+
+def slot_target(channel: dict[str, Any], slot: int, now: datetime | None = None) -> datetime:
+    """Slot saatinin (UTC) takvimdeki oluşumu; 15 dk alt sınırı uygulanmaz (sıralama için de kullanılır)."""
     times = channel["publish_times_utc"]
     if not 0 <= slot < len(times):
         raise ValueError(f"{channel['id']}: geçersiz slot {slot}; 0-{len(times) - 1} arası olmalı")
@@ -58,15 +72,7 @@ def compute_publish_at(channel: dict[str, Any], slot: int, now: datetime | None 
     target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     # Saatin, [now - PAST_GRACE, now - PAST_GRACE + 24 sa) aralığına düşen tek oluşumunu seç
     days = math.ceil((now - PAST_GRACE - target) / timedelta(days=1))
-    target += timedelta(days=days)
-    earliest = now.replace(microsecond=0) + MIN_LEAD_TIME + timedelta(seconds=1)
-    if target < earliest:
-        log.warning(
-            "%s: %s UTC yayın saati yakın/geçmiş; en erken uygun zamana (%s) çekildi",
-            channel["id"], times[slot], earliest.strftime(ISO_FORMAT),
-        )
-        target = earliest
-    return target.strftime(ISO_FORMAT)
+    return target + timedelta(days=days)
 
 
 def _valid_future_time(publish_at_utc: str | None) -> str | None:
