@@ -15,3 +15,7 @@ venv/
 # Geçici token/log dosyaları ve IDE ayarları
 token*.log
 .vscode/
+
+# Cloudflare Wrangler yerel önbelleği
+.wrangler/
+node_modules/
