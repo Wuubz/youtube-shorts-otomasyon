@@ -35,6 +35,34 @@ class AuthError(Exception):
     """POLLINATIONS_API_KEY reddedildi; anahtarsız (ücretsiz) moda dönülür."""
 
 
+class WorkerError(Exception):
+    """Cloudflare Worker (Workers AI) görsel üretemedi; bu çalışmada bir daha denenmez."""
+
+
+def _worker_config() -> tuple[str, str] | None:
+    url, secret = os.environ.get("WORKER_URL", "").strip().rstrip("/"), os.environ.get("WORKER_SECRET", "").strip()
+    return (url, secret) if url and secret else None
+
+
+def _download_worker(prompt: str, seed: int, dest_stem: Path, worker: tuple[str, str]) -> Path:
+    """Cloudflare Workers AI (SDXL-Lightning, ücretsiz günlük hak) ile görsel üretir."""
+    url, secret = worker
+    response = requests.post(
+        f"{url}/image",
+        headers={"Authorization": f"Bearer {secret}", "User-Agent": USER_AGENT},
+        json={"model": "sdxl-lightning", "prompt": prompt[:MAX_PROMPT_CHARS], "width": 768, "height": 1344, "steps": 4, "seed": seed},
+        timeout=(15, 90),
+    )
+    data = response.content
+    extension = _detect_extension(data)
+    if response.status_code != 200 or extension is None or len(data) < MIN_IMAGE_BYTES:
+        detail = re.sub(r"\s+", " ", response.text[:120])
+        raise WorkerError(f"HTTP {response.status_code} {detail}")
+    dest = dest_stem.with_suffix(extension)
+    dest.write_bytes(data)
+    return dest
+
+
 class RateLimitError(Exception):
     """Pollinations ücretsiz katman limiti; wait kadar saniye beklenmeli."""
 
@@ -118,9 +146,14 @@ def generate_images(scenes: list[dict[str, str]], out_dir: Path) -> list[Path]:
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     api_key = os.environ.get(API_KEY_ENV, "").strip() or None
+    worker = _worker_config()
     log.info(
-        "Pollinations modu: %s",
-        "API anahtarı ile (gen.pollinations.ai, bekleme yok)" if api_key else "anahtarsız ücretsiz katman (45 sn/görsel)",
+        "Görsel kaynağı sırası: %s",
+        " -> ".join(
+            (["Pollinations API anahtarı"] if api_key else [])
+            + (["Cloudflare Workers AI"] if worker else [])
+            + ["Pollinations ücretsiz katman (45 sn/görsel)"]
+        ),
     )
     paths: list[Path] = []
     for index, scene in enumerate(scenes):
@@ -132,8 +165,14 @@ def generate_images(scenes: list[dict[str, str]], out_dir: Path) -> list[Path]:
         while attempt < MAX_ATTEMPTS and rate_waited <= MAX_RATE_WAIT_TOTAL:
             seed = random.randint(1, 2_147_483_647)
             try:
-                result = _download(scene["image_prompt"], seed, stem, api_key)
-                log.info("Sahne %d/%d görseli indirildi (seed %d)", index + 1, len(scenes), seed)
+                if api_key is None and worker is not None:
+                    result = _download_worker(scene["image_prompt"], seed, stem, worker)
+                else:
+                    result = _download(scene["image_prompt"], seed, stem, api_key)
+                log.info(
+                    "Sahne %d/%d görseli hazır (%s, seed %d)", index + 1, len(scenes),
+                    "Workers AI" if api_key is None and worker is not None else "Pollinations", seed,
+                )
                 break
             except RateLimitError as exc:
                 rate_streak += 1
@@ -144,8 +183,14 @@ def generate_images(scenes: list[dict[str, str]], out_dir: Path) -> list[Path]:
                 time.sleep(wait)
                 continue
             except AuthError as exc:
-                log.warning("Pollinations API anahtarı kullanılamadı (%s); anahtarsız ücretsiz moda geçiliyor", exc)
+                log.warning(
+                    "Pollinations API anahtarı kullanılamadı (%s); %s geçiliyor", exc,
+                    "Cloudflare Workers AI'a" if worker else "anahtarsız ücretsiz moda",
+                )
                 api_key = None
+            except WorkerError as exc:
+                log.warning("Workers AI görsel üretemedi (%s); anahtarsız ücretsiz Pollinations'a geçiliyor", exc)
+                worker = None
             except (requests.RequestException, ValueError, RuntimeError) as exc:
                 attempt += 1
                 reason = str(exc).replace(api_key, "***") if api_key else str(exc)  # URL'deki anahtarı loga sızdırma

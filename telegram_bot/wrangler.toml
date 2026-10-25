@@ -6,9 +6,12 @@ compatibility_date = "2026-10-01"
 # 5 dakikada bir: zamanlanmış videoların "yayında" bildirimi · 21:00 UTC (00:00 TSİ): günlük özet ve sayaç sıfırlama
 crons = ["*/5 * * * *", "0 21 * * *"]
 
+[ai]
+binding = "AI"
+
 [[kv_namespaces]]
 binding = "KV"
-id = "REPLACE_WITH_KV_ID"
+id = "47e5fb5865254db499ef94c944a1a12f"
 
 [vars]
 CHANNELS = '''[

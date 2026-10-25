@@ -13,6 +13,7 @@ export default {
     try {
       if (request.method === "POST" && url.pathname === "/telegram") return await onTelegram(request, env, ctx);
       if (request.method === "POST" && url.pathname === "/register") return await onRegister(request, env);
+      if (request.method === "POST" && url.pathname === "/image") return await onImage(request, env);
     } catch (err) {
       console.error("fetch hatası", (err && err.stack) || err);
     }
@@ -238,6 +239,35 @@ async function dailyRollover(env) {
     await send(env, `📅 <b>Günlük özet (${snap.date})</b>\n\n${lines.join("\n")}\n\n<b>Toplam</b>: +${fmt(total)} izlenme`);
   }
   await env.KV.put("snap", JSON.stringify({ date: trDate(), views: viewsMap(stats), partial: false }));
+}
+
+// ---------------------------------------------------------------- ücretsiz görsel üretimi (Workers AI)
+// Pollinations bakiyesi bittiğinde GitHub Actions görselleri buradan alır (ücretsiz günlük Workers AI hakkı).
+const IMAGE_MODELS = {
+  "sdxl-lightning": "@cf/bytedance/stable-diffusion-xl-lightning",
+  "flux-1-schnell": "@cf/black-forest-labs/flux-1-schnell",
+  "dreamshaper": "@cf/lykon/dreamshaper-8-lcm",
+};
+
+async function onImage(request, env) {
+  if (request.headers.get("Authorization") !== `Bearer ${env.REGISTER_SECRET}`) {
+    return new Response("forbidden", { status: 403 });
+  }
+  const { model, prompt, width, height, seed, steps } = await request.json();
+  const modelId = IMAGE_MODELS[model || "sdxl-lightning"];
+  if (!modelId || !prompt) return new Response("bad request", { status: 400 });
+  const input = { prompt: String(prompt).slice(0, 1500) };
+  if (width) input.width = width;
+  if (height) input.height = height;
+  if (seed !== undefined) input.seed = seed;
+  if (steps) input.num_steps = steps;
+  if (model === "flux-1-schnell") { delete input.num_steps; if (steps) input.steps = steps; delete input.width; delete input.height; }
+  const out = await env.AI.run(modelId, input);
+  if (out && typeof out === "object" && typeof out.image === "string") {
+    const bytes = Uint8Array.from(atob(out.image), (ch) => ch.charCodeAt(0));
+    return new Response(bytes, { headers: { "content-type": "image/jpeg" } });
+  }
+  return new Response(out, { headers: { "content-type": "image/png" } });
 }
 
 // ---------------------------------------------------------------- "yayında" bildirimleri
