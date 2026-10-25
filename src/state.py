@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 PUBLISH_LOG_PATH = ROOT_DIR / "data" / "publish_log.json"
-STATE_FILES = ("data/history.json", "data/publish_log.json")
+STATE_FILES = ("data",)   # history.json + publish_log.json
 KEEP_DAYS = 7
 PUSH_ATTEMPTS = 4
 
