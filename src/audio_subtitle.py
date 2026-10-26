@@ -13,7 +13,8 @@ import edge_tts
 
 log = logging.getLogger(__name__)
 
-TTS_ATTEMPTS = 3
+TTS_ATTEMPTS = 4
+FALLBACK_VOICE = "en-US-AndrewNeural"  # birincil ses servis tarafından reddedilirse tüm video bu sesle yeniden seslendirilir
 SCENE_TAIL_PAD = 0.18          # her sahne sesinin sonuna eklenen doğal nefes boşluğu (sn); altyazı zamanlaması bu süreyi kapsar
 MAX_TOTAL_AUDIO = 56.0         # video 58 sn'yi geçmesin diye üst sınır
 MAX_SPEEDUP = 1.6
@@ -106,7 +107,9 @@ async def _synthesize_all(
         last_error: Exception | None = None
         for attempt in range(1, TTS_ATTEMPTS + 1):
             try:
-                events = await _synthesize(text, voice, rate, pitch, path)
+                # Son denemede hız/perde ayarı bırakılır; bazı ses/metin kombinasyonlarında servis ses döndürmüyor
+                plain = attempt == TTS_ATTEMPTS
+                events = await _synthesize(text, voice, "+0%" if plain else rate, "+0Hz" if plain else pitch, path)
                 if path.stat().st_size < 1024:
                     raise RuntimeError("Üretilen ses dosyası boş")
                 all_events.append(events)
@@ -243,9 +246,17 @@ def generate_audio_and_subtitles(
 
     if voice_on:
         raw_paths = [work_dir / f"scene_{i}.mp3" for i in range(len(texts))]
-        all_events = asyncio.run(
-            _synthesize_all(texts, channel["voice"], channel["rate"], channel["pitch"], raw_paths)
-        )
+        try:
+            all_events = asyncio.run(
+                _synthesize_all(texts, channel["voice"], channel["rate"], channel["pitch"], raw_paths)
+            )
+        except RuntimeError as exc:
+            if channel["voice"] == FALLBACK_VOICE:
+                raise
+            log.warning("%s sesi kullanılamadı (%s); tüm video %s ile yeniden seslendiriliyor", channel["voice"], exc, FALLBACK_VOICE)
+            all_events = asyncio.run(
+                _synthesize_all(texts, FALLBACK_VOICE, channel["rate"], channel["pitch"], raw_paths)
+            )
     else:
         raw_paths = []
         all_events = [[] for _ in texts]

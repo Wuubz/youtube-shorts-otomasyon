@@ -26,9 +26,9 @@ MODEL_CHAIN = list(dict.fromkeys(
     ) if m]
 ))
 MAX_REQUESTS = 16               # bir senaryo için toplam istek tavanı
-TRANSIENT_TRIES = 3             # aynı modelde 503/bağlantı kopması için deneme
+TRANSIENT_TRIES = 2             # aynı modelde 503/bağlantı kopması için deneme
 CONTENT_TRIES = 2               # aynı modelde geçersiz içerik (kelime sayısı, şema) için deneme
-REQUEST_TIMEOUT_MS = 90_000     # takılan isteklerin dakikalarca beklemesini önler
+REQUEST_TIMEOUT_MS = 60_000     # takılan isteklerin dakikalarca beklemesini önler
 TEMPERATURE = 0.95
 _TRANSIENT_MARKERS = (
     "503", "500", "502", "504", "UNAVAILABLE", "INTERNAL", "DEADLINE", "disconnected", "timed out",
