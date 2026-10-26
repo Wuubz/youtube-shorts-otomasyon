@@ -4,8 +4,8 @@
 // Değişken: CHANNELS (JSON: [{id, name, emoji, yt}]). KV bağlaması: KV.
 
 const TR_OFFSET_MS = 3 * 3600 * 1000;          // TSİ = UTC+3
-const STATS_CACHE_MS = 120 * 1000;             // YouTube kotasını korumak için istatistik önbelleği
-const MIN_FORCED_REFRESH_MS = 30 * 1000;
+const STATS_CACHE_MS = 15 * 1000;              // her seçimde güncel veri; yalnızca art arda dokunuşları birleştirir (1 kota birimi/çağrı)
+const MIN_FORCED_REFRESH_MS = 5 * 1000;
 
 export default {
   async fetch(request, env, ctx) {
@@ -71,7 +71,21 @@ async function handleUpdate(update, env) {
   if (chatId !== String(env.CHAT_ID)) return;   // yalnızca bot sahibi kullanabilir
 
   if (message) {
-    await send(env, MENU_TEXT, { reply_markup: menuKeyboard(env) });
+    const command = ((message.text || "").trim().split(/[\s@]/)[0] || "").toLowerCase();
+    if (command === "/tumu" || command === "/all") {
+      try {
+        const stats = await getStats(env, true);
+        const snap = await getSnapshot(env, stats);
+        await send(env, allText(env, stats, snap), {
+          reply_markup: { inline_keyboard: [[{ text: "🔄 Yenile", callback_data: "all:r" }, { text: "⬅️ Menü", callback_data: "menu" }]] },
+        });
+      } catch (err) {
+        console.error("istatistik hatası", (err && err.stack) || err);
+        await send(env, "⚠️ İstatistikler şu an alınamadı, biraz sonra tekrar deneyin.");
+      }
+      return;
+    }
+    await send(env, MENU_TEXT, { reply_markup: menuKeyboard(env) });   // /menu, /start ve diğer her mesaj
     return;
   }
   const data = callback.data || "";
