@@ -40,11 +40,11 @@
         "Multiverse theories, simulation theory and mind-bending cosmic scale comparisons"
       ],
       "hook_styles": [
-        "A shocking number or scale comparison that is hard to believe",
-        "A direct 'What if...' question that puts the viewer inside the scenario",
-        "A bold claim that sounds impossible but is true",
-        "A cold open that drops the viewer into the middle of a cosmic event",
-        "A myth-busting statement: 'Everything you were taught about this is wrong'"
+        "Open with one impossible-sounding cosmic fact with a precise number, then say you will explain it by the end",
+        "Open with a direct 'What if...' that drops the viewer into the disaster at second one, and hold back the outcome",
+        "Open with a claim that contradicts what every textbook says, stated as flat fact",
+        "Open in the middle of the event (a star is already dying, a signal is already arriving) with no setup",
+        "Open with a chilling cosmic detail that sounds like horror, then promise the real explanation is stranger"
       ],
       "visual_moods": [
         "vivid purple and magenta nebula glow",
@@ -54,7 +54,22 @@
         "stark high-contrast black and white astrophotography with a single warm light source",
         "golden sunrise light grazing across alien landscapes"
       ],
-      "style": "cosmic"
+      "style": "cosmic",
+      "title_formulas": [
+        "[Cosmic object] Is Secretly [shocking claim]",
+        "The [eerie adjective] [object] That [impossible action]",
+        "What Happens If [dramatic scenario]?",
+        "This [object] Should Not Exist"
+      ],
+      "proven_examples": [
+        "Saturn's Ring Is Made of Alien Ocean Water",
+        "The Sunless Planet That Radiates Ghost Light",
+        "This Star Was Kicked Out Of Our Galaxy"
+      ],
+      "weak_examples": [
+        "The Invisible Doorway That Could Destroy Earth (vague)",
+        "three separate Voyager videos in a row (repetitive)"
+      ]
     },
     "ch2_dark_history": {
       "enabled": true,
@@ -96,11 +111,11 @@
         "The Bronze Age collapse and the mystery of the Sea Peoples"
       ],
       "hook_styles": [
-        "A chilling single sentence that states the mystery outright",
-        "A question that begins with 'Why did nobody ever explain...'",
-        "A date and place cold open: 'In the year ..., something impossible happened'",
-        "A shocking claim that contradicts the standard history lesson",
-        "A whispered warning tone: 'History tried to hide this'"
+        "Open with a date, a place and the single impossible fact: 'In 1307, a fleet of ... vanished and nobody ever...'",
+        "Open with a precise number that makes the claim unbelievable (weights, years, body counts) and withhold why",
+        "Open by flatly contradicting the standard history lesson",
+        "Open with a whispered warning that someone tried to bury this record, then name the buried thing",
+        "Open with the last known moment before everything vanished, as if narrating a cold case file"
       ],
       "visual_moods": [
         "torchlit stone chambers with flickering amber shadows",
@@ -110,7 +125,23 @@
         "dusty golden desert light over crumbling monuments",
         "candlelit medieval interiors with deep red and brown tones"
       ],
-      "style": "chronicle"
+      "style": "chronicle",
+      "title_formulas": [
+        "The Impossible [specific number + thing] of [place]",
+        "The [thing] That Vanished in [year]",
+        "The [vessel/city/army] That [impossible fact] for [number] Years",
+        "Why Nobody Can Explain [specific real mystery]"
+      ],
+      "proven_examples": [
+        "The Impossible 70-Ton Boxes of Saqqara",
+        "The Forbidden Fleet That Vanished in 1307",
+        "The Ghost Ship That Sailed Alone for 38 Years"
+      ],
+      "weak_examples": [
+        "The Darkest Siege Tactic in Ancient History (vague superlative)",
+        "The Empire That Vanished Overnight (no concrete subject)",
+        "three vanished-ship stories in a row (repetitive)"
+      ]
     },
     "ch3_dark_psychology": {
       "enabled": true,
@@ -152,11 +183,11 @@
         "Why smart people overthink and how to stop"
       ],
       "hook_styles": [
-        "A blunt rule: 'Never do this if you want people to respect you'",
-        "A secret reveal: 'Here is what manipulators do not want you to know'",
-        "A direct question aimed at the viewer's own behavior",
-        "A counterintuitive statement that flips common advice",
-        "A short Stoic quote followed by a challenge to the viewer"
+        "Open by calling out a habit the viewer does right now: 'You do this every day and it is costing you respect'",
+        "Open with a blunt rule that flips common advice: 'Never ... if you want people to respect you'",
+        "Open with a secret reveal about what manipulators or powerful people do and hope you never notice",
+        "Open with a counterintuitive statement that sounds wrong but the viewer instantly recognises as true from their own life",
+        "Open with a short Stoic line, then a direct challenge aimed at the viewer personally"
       ],
       "visual_moods": [
         "lone silhouette in a rain-soaked neon-lit street",
@@ -166,7 +197,21 @@
         "ancient marble busts under dramatic spotlight",
         "empty glass corridor with long reflections and cold teal tones"
       ],
-      "style": "noir"
+      "style": "noir",
+      "title_formulas": [
+        "Why [common behaviour] Destroys [thing people value]",
+        "The Stoic Secret to [desired outcome]",
+        "Why [normal habit] Makes People Lose Respect For You",
+        "[Number] Signs Someone Is [dark trait]"
+      ],
+      "proven_examples": [
+        "Why Agreeing With Everyone Destroys Respect",
+        "The Stoic Secret to Never Feeling Betrayed",
+        "How to Become Mentally Unstoppable"
+      ],
+      "weak_examples": [
+        "Why Solitude Makes You Untouchable (abstract, no relatable situation)"
+      ]
     },
     "ch4_epic_mythology": {
       "enabled": true,
@@ -208,11 +253,11 @@
         "Little-known myths and obscure gods most people have never heard of"
       ],
       "hook_styles": [
-        "A dramatic storyteller opening: 'Long before humans walked the earth...'",
-        "A shocking fate: reveal the tragic ending in the first sentence",
-        "A question: 'What would you do if a god demanded...'",
-        "A bold claim: 'This is the most terrifying creature in all of mythology'",
-        "A prophecy-style line that foretells what is about to happen"
+        "Open with the tragic ending of a famous myth in the first sentence, then say how it came to that",
+        "Open with a prophecy-style line that foretells exactly what is about to happen to the hero or god",
+        "Open with the cruelest choice a god ever forced on a mortal and ask what the viewer would do",
+        "Open with a superlative claim ('the most tragic', 'the most terrifying') about a named, well-known figure",
+        "Open in the middle of the doomed moment, with the character's name and what they are about to lose"
       ],
       "visual_moods": [
         "golden Olympian light breaking through storm clouds",
@@ -222,7 +267,22 @@
         "blazing red and black underworld fire and obsidian",
         "silver moonlit ancient forests with glowing spirits"
       ],
-      "style": "epic"
+      "style": "epic",
+      "title_formulas": [
+        "The Most Tragic [love story/betrayal/sacrifice] in [Greek/Norse/Egyptian/Japanese] Mythology",
+        "The Darkest [type of story] Ever Told About [famous god or hero]",
+        "The God Who [shocking deed]",
+        "The Real Story of [famous figure] Is Darker Than You Think"
+      ],
+      "proven_examples": [
+        "The Most Tragic Love Story in Egyptian Mythology",
+        "The Darkest Mythological Love Story Ever"
+      ],
+      "weak_examples": [
+        "The 90-Foot Bone Demon Watching You (obscure)",
+        "The God Who Demanded a Princess (obscure)",
+        "The God Who Bet His Own Head (obscure)"
+      ]
     },
     "ch5_midnight_horror": {
       "enabled": true,
@@ -263,11 +323,11 @@
         "Home-alone and babysitter horror with a final twist"
       ],
       "hook_styles": [
-        "A calm, ordinary sentence that hides something deeply wrong",
-        "A direct address: 'If you hear this sound tonight, do not answer'",
-        "A rule-based opening: 'There are three rules in this house'",
-        "A confession: 'I never told anyone what I saw that night'",
-        "An unsettling detail stated as casual fact"
+        "Open in the first person with one concrete, specific, terrifying discovery: 'There was someone inside my walls'",
+        "Open with a calm ordinary sentence that hides something deeply wrong, then reveal the wrong detail in sentence two",
+        "Open with a direct warning to the viewer about something they will hear or see tonight",
+        "Open with a confession: 'I never told anyone what I saw that night'",
+        "Open with an unsettling detail stated as casual fact, like noticing something that should not be possible"
       ],
       "visual_moods": [
         "pitch-black hallway with a single flickering light",
@@ -277,7 +337,20 @@
         "rain-streaked window with a pale silhouette outside",
         "old sepia photograph aesthetic with ghostly double exposure"
       ],
-      "style": "horror"
+      "style": "horror",
+      "title_formulas": [
+        "There Was Someone [terrifying concrete location/action]",
+        "I Found [concrete creepy object] In My [place]",
+        "Do Not Answer If [specific sound] Calls Your Name",
+        "The [specific object] That [impossible creepy behaviour]"
+      ],
+      "proven_examples": [
+        "There Was Someone Inside My Walls"
+      ],
+      "weak_examples": [
+        "'3 Rules' / 'Three Rules' stories (used twice, almost no views: do NOT use a rules format)",
+        "The Silent Campfire in the Woods (abstract)"
+      ]
     },
     "ch6_universal_stories": {
       "enabled": true,
@@ -318,11 +391,11 @@
         "A child and an animal friend growing up together"
       ],
       "hook_styles": [
-        "A tender question: 'Have you ever seen loyalty like this?'",
-        "A dramatic moment first: start at the most emotional scene, then explain",
-        "A gentle storyteller opening: 'Once there was a small ... who had nothing but hope'",
-        "A surprising twist teaser: 'Nobody expected what happened next'",
-        "A moral teaser: 'This tiny animal taught me the most important lesson'"
+        "Start at the single most emotional moment of the story (the rescue, the reunion), then rewind to explain how it happened",
+        "Open with a concrete act of loyalty or courage by a named animal, stated as fact, and hint at the payoff years later",
+        "Open with a reversal teaser: 'He saved this animal... years later it saved him'",
+        "Open with what the animal did when nobody was watching, then promise a twist most viewers will not see coming",
+        "Open with a tiny helpless animal in danger and the one human or animal who refused to leave it"
       ],
       "visual_moods": [
         "soft golden hour meadow with glowing backlight",
@@ -332,7 +405,22 @@
         "seaside sunrise with pastel pink and orange sky",
         "rainy window glow with warm lamplight and soft bokeh"
       ],
-      "style": "warm"
+      "style": "warm",
+      "title_formulas": [
+        "He Saved [animal]... Years Later [it saved him]",
+        "The [adjective] [animal] Who Never Gave Up",
+        "This [animal] Waited [specific time] For [person]",
+        "She Rescued [animal]. What It Did Next Changed Everything"
+      ],
+      "proven_examples": [
+        "He Saved This Pup... Years Later It Saved Him",
+        "The Three-Legged Dog Who Never Gave Up"
+      ],
+      "weak_examples": [
+        "Why Did A Wild Fox Sneak Inside This Cabin? (vague question, 0 views)",
+        "Why This Dog Waits Here Every Sunset... (vague, 0 views)",
+        "What an Old Dog Taught Me About Love (abstract)"
+      ]
     }
   }
 }

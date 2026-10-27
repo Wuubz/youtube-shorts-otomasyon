@@ -15,6 +15,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT_DIR / "config" / "channels.json"
 HISTORY_PATH = ROOT_DIR / "data" / "history.json"
 MAX_HISTORY_TOPICS = 200
+MAX_THEME_HISTORY = 60
 
 load_dotenv(ROOT_DIR / ".env")
 
@@ -36,7 +37,9 @@ REQUIRED_CHANNEL_FIELDS = (
     "visual_style_prompt",
 )
 # Çeşitlilik için isteğe bağlı listeler: her videoda bunlardan rastgele biri seçilir
-OPTIONAL_STRING_LISTS = ("sub_themes", "hook_styles", "visual_moods")
+OPTIONAL_STRING_LISTS = (
+    "sub_themes", "hook_styles", "visual_moods", "title_formulas", "proven_examples", "weak_examples",
+)
 VALID_SCHEDULE_MODES = ("scheduled", "immediate")
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
@@ -151,7 +154,13 @@ def get_topics(channel_id: str) -> list[str]:
     return list(entry.get("topics", []))[-MAX_HISTORY_TOPICS:]
 
 
-def add_topic(channel_id: str, topic: str) -> None:
+def get_themes(channel_id: str) -> list[str]:
+    """Kanalda son kullanılan alt temalar (eskiden yeniye); alt tema rotasyonu için."""
+    entry = load_history().get(channel_id, {})
+    return list(entry.get("themes", []))[-MAX_THEME_HISTORY:]
+
+
+def add_topic(channel_id: str, topic: str, theme: str | None = None) -> None:
     """Konuyu kanal geçmişine ekler; yalnızca son 200 konu saklanır."""
     topic = topic.strip()
     if not topic:
@@ -159,6 +168,8 @@ def add_topic(channel_id: str, topic: str) -> None:
     history = load_history()
     entry = history.setdefault(channel_id, {"topics": []})
     entry.setdefault("topics", []).append(topic)
+    if theme:
+        entry["themes"] = (entry.get("themes", []) + [theme])[-MAX_THEME_HISTORY:]
     save_history(history)
     log.info("[%s] Konu geçmişe eklendi: %s", channel_id, topic)
 

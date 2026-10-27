@@ -134,7 +134,7 @@ def run_channel(channel: dict[str, Any], args: argparse.Namespace, day: str) -> 
                 if slot is not None:
                     mark_done(channel_id, slot, day)
                 if not args.no_history:
-                    add_topic(channel_id, script["topic_summary"])
+                    add_topic(channel_id, script["topic_summary"], script.get("sub_theme"))
                 sync_state(f"{channel_id} yüklendi")
                 notify_uploaded(channel, script, video_id, publish_at)
                 register_publish(channel, script, video_id, publish_at)
@@ -143,7 +143,7 @@ def run_channel(channel: dict[str, Any], args: argparse.Namespace, day: str) -> 
             return
 
         if not args.no_history:
-            add_topic(channel_id, script["topic_summary"])
+            add_topic(channel_id, script["topic_summary"], script.get("sub_theme"))
     finally:
         shutil.rmtree(run_dir, ignore_errors=True)
 

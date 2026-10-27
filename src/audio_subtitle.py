@@ -231,7 +231,9 @@ def _animation(kind: str, y: int) -> str:
     return r"\fad(50,30)\fscx86\fscy86\t(0,120,\fscx100\fscy100)"  # pop
 
 
-def write_ass(cues: list[tuple[float, float, str]], dest: Path, style: dict | None = None) -> None:
+def write_ass(
+    cues: list[tuple[float, float, str]], dest: Path, style: dict | None = None, highlight_from: float | None = None
+) -> None:
     """1080x1920 için kanal stiline göre (font, renk, kutu, animasyon) .ass altyazı dosyası yazar."""
     caption = (style or resolve_style({}))["caption"]
     border_style = 3 if caption["box"] else 1
@@ -258,7 +260,11 @@ def write_ass(cues: list[tuple[float, float, str]], dest: Path, style: dict | No
     lines = []
     for index, (start, end, text) in enumerate(cues):
         base = colors[index % len(colors)]
-        effect = "{" + _animation(caption["anim"], y) + r"\1c" + base + "}"
+        closing = highlight_from is not None and start >= highlight_from - 0.05
+        if closing:  # kapanıştaki yorum sorusu vurgu renginde ve biraz daha büyük görünür
+            base = caption["accent"]
+        size = "{" + r"\fs" + str(round(caption["size"] * 1.1)) + "}" if closing else ""
+        effect = "{" + _animation(caption["anim"], y) + r"\1c" + base + "}" + size
         lines.append(
             f"Dialogue: 0,{_ass_time(start)},{_ass_time(end)},Default,,0,0,0,,{effect}{_caption_text(text, caption, base)}\n"
         )
@@ -327,7 +333,7 @@ def generate_audio_and_subtitles(
         offset += duration
 
     ass_path = work_dir / "subtitles.ass"
-    write_ass(cues, ass_path, style)
+    write_ass(cues, ass_path, style, highlight_from=sum(durations[:-1]))
     total = sum(durations)
     log.info("Ses hazır: %d sahne, toplam %.1f sn, %d altyazı bloğu", len(durations), total, len(cues))
     return AudioResult(audio_path=narration, ass_path=ass_path, durations=durations, total_duration=total)
