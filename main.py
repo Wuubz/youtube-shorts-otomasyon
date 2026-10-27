@@ -24,6 +24,7 @@ from src.image_generator import generate_images
 from src.notifier import notify_failures, notify_uploaded, register_publish
 from src.script_generator import generate_script
 from src.state import is_done, mark_done, sync_state, today_utc
+from src.styles import resolve_style
 from src.video_editor import render_video
 from src.youtube_uploader import compute_publish_at, slot_target, upload_video
 
@@ -79,7 +80,7 @@ def produce_video(channel: dict[str, Any], script: dict[str, Any], run_dir: Path
     """Görseller -> ses/altyazı -> kurgu zincirini çalıştırır."""
     images = generate_images(script["scenes"], run_dir / "images")
     audio = generate_audio_and_subtitles(script["scenes"], channel, run_dir / "audio")
-    return render_video(images, audio, channel["id"], run_dir / "video", OUTPUT_DIR)
+    return render_video(images, audio, channel["id"], run_dir / "video", OUTPUT_DIR, resolve_style(channel))
 
 
 def _upload_with_retry(channel: dict[str, Any], video: Path, script: dict[str, Any], slot: int | None) -> tuple[str, str | None]:

@@ -10,7 +10,10 @@
       "pitch": "+0Hz",
       "category_id": "28",
       "daily_target": 2,
-      "publish_times_utc": ["13:30", "21:30"],
+      "publish_times_utc": [
+        "13:30",
+        "21:30"
+      ],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH1",
       "display_name": "Space Paradox",
@@ -50,19 +53,23 @@
         "ghostly teal auroras and ionized gas",
         "stark high-contrast black and white astrophotography with a single warm light source",
         "golden sunrise light grazing across alien landscapes"
-      ]
+      ],
+      "style": "cosmic"
     },
     "ch2_dark_history": {
       "enabled": true,
       "concept": "Dark History, Ancient Civilizations & Unsolved Historical Mysteries",
       "language": "en",
-      "voice": "en-US-BrianMultilingualNeural",
+      "voice": "en-GB-RyanNeural",
       "voice_enabled": true,
-      "rate": "+0%",
-      "pitch": "+0Hz",
+      "rate": "-4%",
+      "pitch": "-3Hz",
       "category_id": "27",
       "daily_target": 2,
-      "publish_times_utc": ["14:00", "22:00"],
+      "publish_times_utc": [
+        "14:00",
+        "22:00"
+      ],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH2",
       "display_name": "Forgotten Echoes",
@@ -102,19 +109,23 @@
         "stormy seas and dark skies with dramatic lightning",
         "dusty golden desert light over crumbling monuments",
         "candlelit medieval interiors with deep red and brown tones"
-      ]
+      ],
+      "style": "chronicle"
     },
     "ch3_dark_psychology": {
       "enabled": true,
       "concept": "Dark Psychology Tricks, Human Behavior & Stoic Mindset Rules",
       "language": "en",
-      "voice": "en-US-AndrewMultilingualNeural",
+      "voice": "en-US-EmmaMultilingualNeural",
       "voice_enabled": true,
-      "rate": "+0%",
+      "rate": "+6%",
       "pitch": "+0Hz",
       "category_id": "27",
       "daily_target": 2,
-      "publish_times_utc": ["12:30", "20:00"],
+      "publish_times_utc": [
+        "12:30",
+        "20:00"
+      ],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH3",
       "display_name": "Psych Decoded",
@@ -154,7 +165,8 @@
         "split-lit face half in shadow, half in cold light",
         "ancient marble busts under dramatic spotlight",
         "empty glass corridor with long reflections and cold teal tones"
-      ]
+      ],
+      "style": "noir"
     },
     "ch4_epic_mythology": {
       "enabled": true,
@@ -166,7 +178,10 @@
       "pitch": "+0Hz",
       "category_id": "27",
       "daily_target": 2,
-      "publish_times_utc": ["14:30", "22:30"],
+      "publish_times_utc": [
+        "14:30",
+        "22:30"
+      ],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH4",
       "display_name": "Mythic Realms",
@@ -206,7 +221,8 @@
         "misty Japanese mountain shrines with red torii gates and cherry blossoms",
         "blazing red and black underworld fire and obsidian",
         "silver moonlit ancient forests with glowing spirits"
-      ]
+      ],
+      "style": "epic"
     },
     "ch5_midnight_horror": {
       "enabled": true,
@@ -214,11 +230,14 @@
       "language": "en",
       "voice": "en-US-BrianMultilingualNeural",
       "voice_enabled": true,
-      "rate": "+0%",
-      "pitch": "+0Hz",
+      "rate": "-8%",
+      "pitch": "-6Hz",
       "category_id": "24",
       "daily_target": 2,
-      "publish_times_utc": ["16:00", "01:00"],
+      "publish_times_utc": [
+        "16:00",
+        "01:00"
+      ],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH5",
       "display_name": "Never Look Behind",
@@ -257,7 +276,8 @@
         "abandoned room lit only by a dying lamp, dust in the air",
         "rain-streaked window with a pale silhouette outside",
         "old sepia photograph aesthetic with ghostly double exposure"
-      ]
+      ],
+      "style": "horror"
     },
     "ch6_universal_stories": {
       "enabled": true,
@@ -269,7 +289,10 @@
       "pitch": "+0Hz",
       "category_id": "15",
       "daily_target": 2,
-      "publish_times_utc": ["12:00", "19:00"],
+      "publish_times_utc": [
+        "12:00",
+        "19:00"
+      ],
       "schedule_mode": "scheduled",
       "env_prefix": "YT_CH6",
       "display_name": "Pure Paws Stories",
@@ -308,7 +331,8 @@
         "lush green forest with dappled sunlight",
         "seaside sunrise with pastel pink and orange sky",
         "rainy window glow with warm lamplight and soft bokeh"
-      ]
+      ],
+      "style": "warm"
     }
   }
 }

@@ -11,6 +11,8 @@ from typing import Any
 
 import edge_tts
 
+from src.styles import POWER_WORDS, resolve_style
+
 log = logging.getLogger(__name__)
 
 TTS_ATTEMPTS = 4
@@ -175,10 +177,10 @@ def _chunk_entries(
 
 
 def _scene_cues(
-    events: list[Event], text: str, duration: float, offset: float, speed: float
+    events: list[Event], text: str, duration: float, offset: float, speed: float, max_words: int = 3
 ) -> list[tuple[float, float, str]]:
     entries = [(s / speed, e / speed, t) for s, e, t in _word_entries(events, text, duration)]
-    chunks = _chunk_entries(entries)
+    chunks = _chunk_entries(entries, max_words=max_words)
     scene_end = offset + duration
     cues: list[tuple[float, float, str]] = []
     for i, (start, end, chunk_text) in enumerate(chunks):
@@ -196,12 +198,44 @@ def _ass_time(seconds: float) -> str:
     return f"{centis // 360000}:{centis // 6000 % 60:02d}:{centis // 100 % 60:02d}.{centis % 100:02d}"
 
 
-def _ass_text(text: str) -> str:
-    return text.replace("{", "(").replace("}", ")").replace("\\", "").replace("\n", " ").upper()
+def _ass_escape(text: str) -> str:
+    return text.replace("{", "(").replace("}", ")").replace("\\", "").replace("\n", " ")
 
 
-def write_ass(cues: list[tuple[float, float, str]], dest: Path) -> None:
-    """1080x1920 için orta-alt hizalı, kalın, siyah konturlu .ass dosyası yazar."""
+def _is_emphasis(word: str) -> bool:
+    bare = word.strip(".,!?;:\"'…()-").lower()
+    return any(ch.isdigit() for ch in bare) or bare in POWER_WORDS
+
+
+def _caption_text(text: str, caption: dict, base_color: str) -> str:
+    """Rakamları ve güç kelimelerini vurgu renginde işaretler."""
+    out = []
+    for word in _ass_escape(text).split():
+        shown = word.upper() if caption["uppercase"] else word
+        if _is_emphasis(word):
+            out.append(r"{\1c" + caption["accent"] + "}" + shown + r"{\1c" + base_color + "}")
+        else:
+            out.append(shown)
+    return " ".join(out)
+
+
+def _animation(kind: str, y: int) -> str:
+    if kind == "rise":
+        return rf"\an2\move(540,{y + 50},540,{y},0,150)\fad(60,40)"
+    if kind == "fade":
+        return r"\fad(200,120)\blur1.2"
+    if kind == "shake":
+        return r"\fad(40,40)\fscx106\fscy106\frz-2\t(0,70,\frz2\fscx100\fscy100)\t(70,140,\frz0)"
+    if kind == "bounce":
+        return r"\fad(40,30)\fscx65\fscy65\t(0,110,\fscx120\fscy120)\t(110,210,\fscx100\fscy100)"
+    return r"\fad(50,30)\fscx86\fscy86\t(0,120,\fscx100\fscy100)"  # pop
+
+
+def write_ass(cues: list[tuple[float, float, str]], dest: Path, style: dict | None = None) -> None:
+    """1080x1920 için kanal stiline göre (font, renk, kutu, animasyon) .ass altyazı dosyası yazar."""
+    caption = (style or resolve_style({}))["caption"]
+    border_style = 3 if caption["box"] else 1
+    outline_color = "&H64000000" if caption["box"] else caption["outline"]
     header = (
         "[Script Info]\n"
         "ScriptType: v4.00+\n"
@@ -213,17 +247,20 @@ def write_ass(cues: list[tuple[float, float, str]], dest: Path) -> None:
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "
         "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, "
         "Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
-        f"Style: Default,{SUBTITLE_FONT},84,&H0000FFFF,&H000000FF,&H00000000,&H96000000,"
-        "-1,0,0,0,100,100,0,0,1,7,3,2,70,70,520,1\n\n"
+        f"Style: Default,{caption['font'] or SUBTITLE_FONT},{caption['size']},{caption['colors'][0]},&H000000FF,"
+        f"{outline_color},&H96000000,{-1 if caption['bold'] else 0},0,0,0,100,100,0,0,{border_style},"
+        f"{caption['outline_w']},{caption['shadow']},2,70,70,{caption['margin_v']},1\n\n"
         "[Events]\n"
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     )
+    y = 1920 - caption["margin_v"]
+    colors = caption["colors"]
     lines = []
     for index, (start, end, text) in enumerate(cues):
-        color = "" if index % 2 == 0 else r"\1c&H00FFFFFF&"  # sarı / beyaz dönüşümlü
-        effect = r"{\fad(50,30)\fscx88\fscy88\t(0,120,\fscx100\fscy100)" + color + "}"
+        base = colors[index % len(colors)]
+        effect = "{" + _animation(caption["anim"], y) + r"\1c" + base + "}"
         lines.append(
-            f"Dialogue: 0,{_ass_time(start)},{_ass_time(end)},Default,,0,0,0,,{effect}{_ass_text(text)}\n"
+            f"Dialogue: 0,{_ass_time(start)},{_ass_time(end)},Default,,0,0,0,,{effect}{_caption_text(text, caption, base)}\n"
         )
     dest.write_text(header + "".join(lines), encoding="utf-8")
 
@@ -243,6 +280,7 @@ def generate_audio_and_subtitles(
     work_dir.mkdir(parents=True, exist_ok=True)
     texts = [s["narration"] for s in scenes]
     voice_on = bool(channel.get("voice_enabled", True))
+    style = resolve_style(channel)
 
     if voice_on:
         raw_paths = [work_dir / f"scene_{i}.mp3" for i in range(len(texts))]
@@ -285,11 +323,11 @@ def generate_audio_and_subtitles(
     cues: list[tuple[float, float, str]] = []
     offset = 0.0
     for text, events, duration in zip(texts, all_events, durations):
-        cues.extend(_scene_cues(events, text, duration, offset, speed))
+        cues.extend(_scene_cues(events, text, duration, offset, speed, style["caption"]["chunk"]))
         offset += duration
 
     ass_path = work_dir / "subtitles.ass"
-    write_ass(cues, ass_path)
+    write_ass(cues, ass_path, style)
     total = sum(durations)
     log.info("Ses hazır: %d sahne, toplam %.1f sn, %d altyazı bloğu", len(durations), total, len(cues))
     return AudioResult(audio_path=narration, ass_path=ass_path, durations=durations, total_duration=total)
