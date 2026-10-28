@@ -232,7 +232,8 @@ def _animation(kind: str, y: int) -> str:
 
 
 def write_ass(
-    cues: list[tuple[float, float, str]], dest: Path, style: dict | None = None, highlight_from: float | None = None
+    cues: list[tuple[float, float, str]], dest: Path, style: dict | None = None, highlight_from: float | None = None,
+    labels: list[tuple[float, float, str]] | None = None,
 ) -> None:
     """1080x1920 için kanal stiline göre (font, renk, kutu, animasyon) .ass altyazı dosyası yazar."""
     caption = (style or resolve_style({}))["caption"]
@@ -251,7 +252,9 @@ def write_ass(
         "Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
         f"Style: Default,{caption['font'] or SUBTITLE_FONT},{caption['size']},{caption['colors'][0]},&H000000FF,"
         f"{outline_color},&H96000000,{-1 if caption['bold'] else 0},0,0,0,100,100,0,0,{border_style},"
-        f"{caption['outline_w']},{caption['shadow']},2,70,70,{caption['margin_v']},1\n\n"
+        f"{caption['outline_w']},{caption['shadow']},2,70,70,{caption['margin_v']},1\n"
+        # Zaman/yer etiketi: üstte, yarı saydam kutu içinde küçük yazı
+        f"Style: Label,{caption['font'] or SUBTITLE_FONT},48,&H00FFFFFF,&H000000FF,&H78000000,&H78000000,-1,0,0,0,100,100,3,0,3,16,0,8,70,70,250,1\n\n"
         "[Events]\n"
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     )
@@ -267,6 +270,12 @@ def write_ass(
         effect = "{" + _animation(caption["anim"], y) + r"\1c" + base + "}" + size
         lines.append(
             f"Dialogue: 0,{_ass_time(start)},{_ass_time(end)},Default,,0,0,0,,{effect}{_caption_text(text, caption, base)}\n"
+        )
+    for start, end, text in labels or []:
+        lines.append(
+            f"Dialogue: 1,{_ass_time(start)},{_ass_time(end)},Label,,0,0,0,,"
+            + r"{\fad(250,300)\move(540,225,540,250,0,280)}"
+            + _ass_escape(text).upper() + "\n"
         )
     dest.write_text(header + "".join(lines), encoding="utf-8")
 
@@ -327,13 +336,17 @@ def generate_audio_and_subtitles(
     _concat_wavs(wavs, narration)
 
     cues: list[tuple[float, float, str]] = []
+    labels: list[tuple[float, float, str]] = []
     offset = 0.0
-    for text, events, duration in zip(texts, all_events, durations):
+    for scene, text, events, duration in zip(scenes, texts, all_events, durations):
         cues.extend(_scene_cues(events, text, duration, offset, speed, style["caption"]["chunk"]))
+        label = str(scene.get("label") or "").strip()
+        if label:   # zaman/yer değişimi: sahnenin ilk ~2.6 saniyesinde gösterilir
+            labels.append((offset + 0.15, offset + min(2.6, duration), label))
         offset += duration
 
     ass_path = work_dir / "subtitles.ass"
-    write_ass(cues, ass_path, style, highlight_from=sum(durations[:-1]))
+    write_ass(cues, ass_path, style, highlight_from=sum(durations[:-1]), labels=labels)
     total = sum(durations)
     log.info("Ses hazır: %d sahne, toplam %.1f sn, %d altyazı bloğu", len(durations), total, len(cues))
     return AudioResult(audio_path=narration, ass_path=ass_path, durations=durations, total_duration=total)

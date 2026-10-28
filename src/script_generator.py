@@ -46,12 +46,22 @@ TARGET_MIN_WORDS, TARGET_MAX_WORDS = 90, 115
 # Gemini kelime saymada küçük sapmalar yapabilir; bu pencerenin dışı yeniden denenir (en fazla ~54 sn)
 MIN_TOTAL_WORDS, MAX_TOTAL_WORDS = 85, 125
 MAX_BASE_IMAGE_PROMPT_CHARS = 450
+MAX_IDENTITY_CHARS = 140       # sabit karakter/mekan tarifi başına üst sınır
+MAX_LABELS, MAX_LABEL_CHARS = 3, 28
 IMAGE_SAFETY_SUFFIX = "no text, no letters, no watermark, vertical 9:16 composition"
+
+
+class Character(BaseModel):
+    name: str = Field(description="Short unique name or label, e.g. 'the cat' or 'Thomas'")
+    visual: str = Field(description="Fixed visual description, max 20 words: species/age/build, colors, markings, clothing, one distinguishing feature")
 
 
 class Scene(BaseModel):
     narration: str = Field(description="1-2 sentences spoken in this scene")
-    image_prompt: str = Field(description="Detailed English text-to-image prompt for this scene")
+    image_prompt: str = Field(description="Image prompt: action, framing, lighting only; do not redescribe the characters or the setting")
+    characters_present: list[str] = Field(default_factory=list, description="Exact names from `characters` visible in this scene")
+    show_setting: bool = Field(default=False, description="True if the main setting is visible in this scene")
+    label: str = Field(default="", description="1-4 word on-screen time/place caption when the time or place changes, else empty")
 
 
 class VideoScript(BaseModel):
@@ -60,6 +70,8 @@ class VideoScript(BaseModel):
     description: str
     tags: list[str]
     comment_question: str = Field(description="Short question for viewers, identical to the question closing the last scene")
+    characters: list[Character] = Field(default_factory=list, description="0-3 recurring characters, animals or objects")
+    setting: str = Field(default="", description="Fixed description of the main location, max 25 words")
     scenes: list[Scene]
 
 
@@ -160,6 +172,15 @@ SCRIPT RULES:
 - Original storytelling only. No real-person defamation, no graphic gore, no hate speech, no medical or political misinformation. Keep it advertiser-friendly.
 - Do not use emojis, hashtags, stage directions or scene numbers inside narration.
 
+STORY BIBLE (so the viewer sees the SAME characters and place in every scene):
+- characters: 0 to 3 recurring characters, animals or key objects that appear in two or more scenes. Give each a short name and one fixed `visual` description (max 20 words: species/age/build, exact colors, markings, clothing, one distinguishing feature).
+- setting: one fixed description (max 25 words) of the main location: architecture, weather, time of day, dominant colors.
+- In each scene's image_prompt write ONLY the action, framing and lighting. Do NOT redescribe the characters or the setting there; instead list the exact names of everyone visible in `characters_present` and set `show_setting` to true when the location is visible. The code inserts the fixed descriptions into every image prompt word for word.
+- For topics without recurring characters (space, abstract ideas) leave `characters` empty and use `setting` or a recurring key object for visual continuity.
+
+ON-SCREEN LABELS:
+- label: a 1 to 4 word caption shown on screen when the time or place changes, for example "Kyoto, 1185", "4 years later", "That night", "Deep below". Leave it as an empty string otherwise. Use at most 3 labels per video, never in scene 1 or the last scene.
+
 IMAGE PROMPT RULES (one per scene, matching that scene's narration):
 - English, at most 60 words, highly descriptive: subject, setting, lighting, mood, camera angle. Show the exact concrete thing the narration mentions, never an abstract mood.
 - Scene 1's image is the thumbnail frame that stops the scroll: ONE bold focal subject, extreme close-up or dramatic scale contrast, strong contrast and rim light, visually shocking or intriguing, showing the mystery or the emotional peak itself (not a generic landscape).
@@ -229,13 +250,22 @@ def _finalize_tags(tags: list[str]) -> list[str]:
     return cleaned
 
 
-def _finalize_image_prompt(prompt: str, style: str) -> str:
+def _trim(text: str, limit: int) -> str:
+    text = _clean(text).rstrip(".,; ")
+    if len(text) > limit:
+        text = text[:limit].rsplit(" ", 1)[0].rstrip(".,; ")
+    return text
+
+
+def _finalize_image_prompt(prompt: str, style: str, identity: list[str] | None = None, setting: str = "") -> str:
+    """Sabit karakter/mekan tarifleri en başa konur (görsel modeller baştaki kelimeleri daha çok dikkate alır)."""
     base = _clean(prompt).rstrip(".,; ")
     if not base:
         raise ValueError("Görsel prompt'u boş")
-    if len(base) > MAX_BASE_IMAGE_PROMPT_CHARS:
-        base = base[:MAX_BASE_IMAGE_PROMPT_CHARS].rsplit(" ", 1)[0].rstrip(".,; ")
-    parts = [base]
+    base = _trim(base, MAX_BASE_IMAGE_PROMPT_CHARS if not identity and not setting else 260)
+    parts = [*(identity or []), base]
+    if setting:
+        parts.append(setting)
     if "no watermark" not in base.lower():
         parts.append(IMAGE_SAFETY_SUFFIX)
     if style and style[:30].lower() not in base.lower():
@@ -276,17 +306,33 @@ def _finalize(
     if len(scenes) < MIN_SCENES:
         raise ValueError(f"Yetersiz sahne sayısı: {len(scenes)} (en az {MIN_SCENES})")
 
-    final_scenes: list[dict[str, str]] = []
-    for scene in scenes:
+    visuals = {_normalize(c.name): _trim(c.visual, MAX_IDENTITY_CHARS) for c in raw.characters[:3] if c.name.strip() and c.visual.strip()}
+    setting = _trim(raw.setting, MAX_IDENTITY_CHARS) if raw.setting else ""
+    base_seed = random.randint(1, 2_147_483_647)   # aynı hikayedeki karakterli sahneler aynı tohumla başlar
+    labels_used = 0
+
+    final_scenes: list[dict[str, Any]] = []
+    for index, scene in enumerate(scenes):
         narration = _clean(scene.narration)
         if not narration:
             raise ValueError("Boş narration içeren sahne var")
-        final_scenes.append(
-            {
-                "narration": narration,
-                "image_prompt": _finalize_image_prompt(scene.image_prompt, channel["visual_style_prompt"]),
-            }
-        )
+        identity = [visuals[k] for k in (_normalize(n) for n in scene.characters_present) if k in visuals]
+        used_setting = setting if scene.show_setting else ""
+        label = _clean(scene.label)
+        if not label or labels_used >= MAX_LABELS or index in (0, len(scenes) - 1) or len(label) > MAX_LABEL_CHARS:
+            label = ""
+        else:
+            labels_used += 1
+        entry: dict[str, Any] = {
+            "narration": narration,
+            "image_prompt": _finalize_image_prompt(
+                scene.image_prompt, channel["visual_style_prompt"], identity, used_setting
+            ),
+            "label": label,
+        }
+        if identity or used_setting:
+            entry["seed"] = base_seed
+        final_scenes.append(entry)
     _check_hook(final_scenes[0]["narration"])
     question = _ensure_closing_question(final_scenes, raw.comment_question)
 

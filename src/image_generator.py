@@ -25,6 +25,7 @@ MAX_ATTEMPTS = 4
 MAX_PROMPT_CHARS = 900
 REQUEST_TIMEOUT = (15, 150)  # (bağlantı, okuma) saniye
 API_KEY_ENV = "POLLINATIONS_API_KEY"
+SHARE_SEED = os.environ.get("SHARE_SEED", "0") == "1"   # kapalı: çeşitli kadrajlar; karakter tutarlılığı sabit tarifle sağlanır
 MAX_RATE_WAIT_TOTAL = 300     # sahne başına limitte en fazla bu kadar saniye beklenir (deneme hakkından düşmez)
 DEFAULT_RATE_WAIT = 47
 USER_AGENT = "Mozilla/5.0 (compatible; ShortsAutomation/1.0)"
@@ -162,8 +163,10 @@ def generate_images(scenes: list[dict[str, str]], out_dir: Path) -> list[Path]:
         attempt = 0
         rate_waited = 0.0   # bu sahne için limitte toplam beklenen süre
         rate_streak = 0     # art arda limit yanıtı sayısı
+        shared_seed = scene.get("seed") if SHARE_SEED else None   # aynı karakterli sahneler aynı tohumla başlar
         while attempt < MAX_ATTEMPTS and rate_waited <= MAX_RATE_WAIT_TOTAL:
-            seed = random.randint(1, 2_147_483_647)
+            seed = shared_seed or random.randint(1, 2_147_483_647)
+            shared_seed = None   # yeniden denemelerde farklı tohum
             try:
                 if api_key is None and worker is not None:
                     result = _download_worker(scene["image_prompt"], seed, stem, worker)
