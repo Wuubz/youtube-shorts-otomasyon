@@ -25,7 +25,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "grade": "eq=contrast=1.10:saturation=1.30:gamma=0.96,curves=b='0/0 0.5/0.56 1/1':r='0/0 0.5/0.47 1/1'",
         "vignette": 0.55, "grain": 4, "bloom": 0.22,
         "transitions": ["fadewhite", "dissolve", "circleopen", "smoothleft", "radial", "fadeblack"],
-        "xfade_frames": 14, "intro": "fadewhite", "progress": "0x22D3EE",
+        "xfade_frames": 14, "intro": "none", "progress": "0x22D3EE",
         "caption": {
             "font": "DejaVu Sans", "size": 86, "bold": True, "uppercase": True,
             "colors": ["&H0000FFFF", "&H00FFFFFF"], "accent": "&H00FFD84A", "outline": "&H00501400",
@@ -39,7 +39,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "grade": "eq=contrast=1.18:saturation=0.55:gamma=0.92,colorchannelmixer=rr=1.08:rg=0.12:rb=0.0:gr=0.06:gg=0.95:gb=0.0:br=0.0:bg=0.05:bb=0.72",
         "vignette": 0.85, "grain": 7, "bloom": 0.0,
         "transitions": ["fadeblack", "dissolve", "fadegrays", "wipeleft", "fadeblack"],
-        "xfade_frames": 16, "intro": "fadeblack", "progress": "0xD6A24A",
+        "xfade_frames": 16, "intro": "none", "progress": "0xD6A24A",
         "caption": {
             "font": "DejaVu Serif", "size": 82, "bold": True, "uppercase": False,
             "colors": ["&H00E6F0F5", "&H0090C8F0"], "accent": "&H003C3CE6", "outline": "&H00101828",
@@ -67,7 +67,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "grade": "eq=contrast=1.14:saturation=1.22:gamma=0.95,curves=r='0/0 0.5/0.57 1/1':b='0/0 0.5/0.44 1/1'",
         "vignette": 0.50, "grain": 4, "bloom": 0.30,
         "transitions": ["circleopen", "radial", "fadewhite", "circleclose", "dissolve", "smoothup"],
-        "xfade_frames": 14, "intro": "fadewhite", "progress": "0xF5B83D",
+        "xfade_frames": 14, "intro": "none", "progress": "0xF5B83D",
         "caption": {
             "font": "DejaVu Serif", "size": 88, "bold": True, "uppercase": True,
             "colors": ["&H0050C8FF", "&H00FFFFFF"], "accent": "&H003CA8FF", "outline": "&H00102850",
@@ -81,7 +81,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "grade": "eq=contrast=1.22:saturation=0.45:brightness=-0.05:gamma=0.85,curves=g='0/0 0.5/0.54 1/1':r='0/0 0.5/0.44 1/1'",
         "vignette": 0.95, "grain": 8, "bloom": 0.0,
         "transitions": ["fadeblack", "pixelize", "hblur", "fadeblack", "distance", "fadegrays"],
-        "xfade_frames": 8, "intro": "fadeblack", "progress": "0xB91C1C",
+        "xfade_frames": 8, "intro": "none", "progress": "0xB91C1C",
         "caption": {
             "font": "DejaVu Sans", "size": 84, "bold": True, "uppercase": True,
             "colors": ["&H00F0F0F0", "&H00F0F0F0"], "accent": "&H002020E0", "outline": "&H00000010",
@@ -95,7 +95,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "grade": "eq=contrast=1.06:saturation=1.38:brightness=0.03:gamma=1.04,curves=r='0/0 0.5/0.55 1/1':b='0/0 0.5/0.46 1/1'",
         "vignette": 0.30, "grain": 0, "bloom": 0.35,
         "transitions": ["smoothleft", "circleopen", "smoothright", "dissolve", "fade", "smoothup"],
-        "xfade_frames": 12, "intro": "fade", "progress": "0xFB7185",
+        "xfade_frames": 12, "intro": "none", "progress": "0xFB7185",
         "caption": {
             "font": "DejaVu Sans", "size": 90, "bold": True, "uppercase": False,
             "colors": ["&H00FFFFFF", "&H00B4B4FF", "&H0070F0FF"], "accent": "&H00B450FF", "outline": "&H00662D8A",
