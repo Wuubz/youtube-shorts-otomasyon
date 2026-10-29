@@ -46,7 +46,6 @@ jobs:
     timeout-minutes: 100   # takılan çalışma dakika kotasını yemesin
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
       YT_CH1_CLIENT_ID: ${{ secrets.YT_CH1_CLIENT_ID }}
       YT_CH1_CLIENT_SECRET: ${{ secrets.YT_CH1_CLIENT_SECRET }}
       YT_CH1_REFRESH_TOKEN: ${{ secrets.YT_CH1_REFRESH_TOKEN }}

@@ -12,19 +12,22 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-from src.config_loader import MAX_HISTORY_TOPICS, get_gemini_api_key, get_themes
+from src.config_loader import MAX_HISTORY_TOPICS, get_gemini_api_key, get_themes, get_titles
 
 log = logging.getLogger(__name__)
 
 # Ücretsiz katmanda kota MODEL BAŞINA tutulur; bu yüzden birden çok model zinciri günlük kapasiteyi katlar.
 # GEMINI_MODEL ile ana model değiştirilebilir. Günlük kotası dolan model o çalışmada bir daha denenmez.
+# Sıra gerçek başarıya göre: 3.8 ve 3.7 son çalışmalarda hiç senaryo üretemedi (hep 503/504 ya da kota dolu),
+# bu yüzden son çare olarak sona alındı.
 MODEL_CHAIN = list(dict.fromkeys(
     [m for m in (
         os.environ.get("GEMINI_MODEL", "").strip(),
-        "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
-        "gemini-3-flash-preview", "gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest",
+        "gemini-3.6-flash", "gemini-3-flash-preview", "gemini-3.5-flash", "gemini-2.5-flash",
+        "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash", "gemini-3.7-flash",
     ) if m]
 ))
+OVERLOAD_LIMIT = 2              # bir model bu kadar kez pes ettirirse (503/504) çalışmanın geri kalanında atlanır
 MAX_REQUESTS = 16               # bir senaryo için toplam istek tavanı
 TRANSIENT_TRIES = 2             # aynı modelde 503/bağlantı kopması için deneme
 CONTENT_TRIES = 2               # aynı modelde geçersiz içerik (kelime sayısı, şema) için deneme
@@ -35,6 +38,14 @@ _TRANSIENT_MARKERS = (
     "timeout", "ConnectError", "RemoteProtocol", "ReadError", "Connection",
 )
 _exhausted_models: set[str] = set()   # günlük kotası dolan modeller (süreç boyunca)
+_overload_hits: dict[str, int] = {}   # modelin art arda "pes ettirdiği" sayı; başarıda sıfırlanır
+
+# Başlık benzerliği kontrolü için anlamsız kelimeler ve eş adlar
+_TITLE_STOPWORDS = {"the", "a", "an", "of", "to", "in", "on", "for", "and", "is", "this", "that", "it", "his", "her", "its"}
+_FIGURE_ALIASES = {
+    "heracles": ("hercules",), "kronos": ("cronus", "chronos"), "set": ("seth",), "valkyries": ("valkyrie",),
+    "jormungandr": ("midgard serpent", "world serpent"), "ra": ("re",), "hel": ("helheim",),
+}
 
 SHORTS_SUFFIX = " #Shorts"
 MAX_TITLE_LENGTH = 70
@@ -147,6 +158,7 @@ def _popular_block(channel: dict[str, Any]) -> str:
     return (
         "\nWELL-KNOWN SUBJECTS ONLY: the central figure of the video must be one of these famous, instantly "
         f"recognisable figures (choose one that is not the central subject of a recent video): {shortlist}.\n"
+        "The TITLE must contain the figure's name (for example 'Hades' or 'Thor'), never just 'The God Who...'. "
         "Never pick an obscure, minor or purely regional figure that a casual viewer would not know. "
         "Instead, make the story about the darkest, strangest or least-known secret, myth or consequence "
         "of that famous figure, so the title can name the figure the viewer already recognises.\n"
@@ -156,6 +168,7 @@ def _popular_block(channel: dict[str, Any]) -> str:
 def _build_prompt(channel: dict[str, Any], past_topics: list[str], direction: dict[str, str]) -> str:
     history_block = "\n".join(f"- {t}" for t in past_topics[-MAX_HISTORY_TOPICS:]) or "- (none yet)"
     recent_block = "\n".join(f"- {t}" for t in past_topics[-RECENT_SUBJECTS_SHOWN:]) or "- (none yet)"
+    titles_block = "\n".join(f"- {t}" for t in get_titles(channel["id"])[-15:]) or "- (none yet)"
     return f"""You are a senior YouTube Shorts scriptwriter and retention strategist. Your only goal: the viewer cannot swipe away before the end, then wants to comment.
 
 CHANNEL CONCEPT: {channel['concept']}
@@ -168,6 +181,9 @@ TOPICS ALREADY USED (never repeat or closely paraphrase any of them):
 
 SUBJECT VARIETY: the central subject of the new video (the person, object, place, creature, event or myth it is mainly about) must be completely different from the central subject of each of these recent videos, even if you would approach it from a new angle. If a recent video was about Voyager, do not write about Voyager; if one was about a vanished ship, do not write about another vanished ship:
 {recent_block}
+
+RECENT TITLES ON THIS CHANNEL (the new title must NOT reuse their wording, sentence structure or ending; a viewer scrolling the channel must see clearly different titles):
+{titles_block}
 {_popular_block(channel)}
 {_direction_block(direction, channel)}
 THE HOOK (scene 1, the 3 seconds that decide everything):
@@ -234,6 +250,41 @@ def _finalize_title(title: str) -> str:
         cut = base[:limit]
         base = (cut.rsplit(" ", 1)[0] if " " in cut else cut).rstrip(",;:-–— ")
     return base + SHORTS_SUFFIX
+
+
+def _title_words(title: str) -> list[str]:
+    return _normalize(re.sub(r"#shorts", "", title, flags=re.IGNORECASE)).split()
+
+
+def _check_title_variety(title: str, recent: list[str]) -> None:
+    """Yeni başlık son başlıklara çok benziyorsa (aynı kelimeler, aynı bitiş, art arda aynı açılış) reddeder."""
+    words = _title_words(title)
+    keys = {w for w in words if w not in _TITLE_STOPWORDS}
+    for age, old in enumerate(reversed(recent[-20:])):          # age 0 = en yeni başlık
+        old_words = _title_words(old)
+        old_keys = {w for w in old_words if w not in _TITLE_STOPWORDS}
+        union = keys | old_keys
+        if union and len(keys & old_keys) / len(union) >= 0.6:
+            raise ValueError(f"Başlık son bir başlığa çok benziyor: '{old}'")
+        if age < 12 and len(words) >= 4 and len(old_words) >= 4 and words[-4:] == old_words[-4:]:
+            raise ValueError(f"Başlık, son başlıklardaki cümle bitişini tekrarlıyor: '{old}'")
+        if age < 3 and len(words) >= 3 and words[:3] == old_words[:3]:
+            raise ValueError(f"Başlık art arda aynı açılışla başlıyor: '{old}'")
+
+
+def _check_famous_title(title: str, channel: dict[str, Any]) -> None:
+    """Tanınmış figür listesi olan kanalda başlık bu figürlerden birinin adını içermelidir."""
+    subjects = channel.get("popular_subjects") or []
+    if not subjects:
+        return
+    padded = f" {_normalize(title)} "
+    for subject in subjects:
+        name = _normalize(subject)
+        name = name[4:] if name.startswith("the ") else name
+        for candidate in (name, *_FIGURE_ALIASES.get(name, ())):
+            if f" {_normalize(candidate)} " in padded:
+                return
+    raise ValueError(f"Başlıkta tanınmış bir figürün adı yok: '{title}'")
 
 
 def _finalize_description(description: str, question: str = "") -> str:
@@ -360,9 +411,13 @@ def _finalize(
             f"Toplam kelime sayısı {total_words}; {MIN_TOTAL_WORDS}-{MAX_TOTAL_WORDS} aralığı dışında"
         )
 
+    title = _finalize_title(raw.title)
+    _check_title_variety(title, get_titles(channel["id"]))
+    _check_famous_title(title, channel)
+
     return {
         "topic_summary": topic,
-        "title": _finalize_title(raw.title),
+        "title": title,
         "description": _finalize_description(raw.description, question),
         "tags": _finalize_tags(raw.tags),
         "comment_question": question,
@@ -405,6 +460,8 @@ def generate_script(channel: dict[str, Any], past_topics: list[str]) -> dict[str
     for model in MODEL_CHAIN:
         if model in _exhausted_models:
             continue
+        if _overload_hits.get(model, 0) >= OVERLOAD_LIMIT:
+            continue   # bu çalışmada sürekli 503/504 verdi; her videoda zaman kaybetmemek için atlanır
         transient_tries = content_tries = rate_tries = 0
         while requests_made < MAX_REQUESTS:
             requests_made += 1
@@ -420,6 +477,7 @@ def generate_script(channel: dict[str, Any], past_topics: list[str]) -> dict[str
                     "[%s] Senaryo hazır: '%s' (%d sahne, %s)",
                     channel["id"], script["title"], len(script["scenes"]), model,
                 )
+                _overload_hits.pop(model, None)
                 return script
             except Exception as exc:  # API, ağ, şema ve doğrulama hataları sınıflandırılır
                 last_error = exc
@@ -436,6 +494,7 @@ def generate_script(channel: dict[str, Any], past_topics: list[str]) -> dict[str
                 elif kind == "transient":
                     transient_tries += 1
                     if transient_tries >= TRANSIENT_TRIES:
+                        _overload_hits[model] = _overload_hits.get(model, 0) + 1
                         break
                     time.sleep(5 * 3 ** (transient_tries - 1))   # 5 sn, 15 sn
                 else:

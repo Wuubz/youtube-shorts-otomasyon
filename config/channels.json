@@ -276,10 +276,11 @@
       ],
       "style": "epic",
       "title_formulas": [
-        "The Most Tragic [love story/betrayal/sacrifice] in [Greek/Norse/Egyptian/Japanese] Mythology",
-        "The Darkest [type of story] Ever Told About [famous god or hero]",
-        "The God Who [shocking deed]",
-        "The Real Story of [famous figure] Is Darker Than You Think"
+        "[Famous figure]'s Darkest Secret Nobody Tells You",
+        "What [Famous figure] Did To [victim or rival] Is Worse Than You Think",
+        "The Real Reason [Famous figure] [shocking deed]",
+        "[Famous figure] Was Not What The Myths Say",
+        "The Tragic Fate of [Famous figure]'s [lover/child/enemy]"
       ],
       "proven_examples": [
         "The Most Tragic Love Story in Egyptian Mythology",
@@ -287,8 +288,10 @@
       ],
       "weak_examples": [
         "The 90-Foot Bone Demon Watching You (obscure)",
-        "The God Who Demanded a Princess (obscure)",
-        "The God Who Bet His Own Head (obscure)"
+        "The God Who Demanded a Princess (no famous name in the title)",
+        "The God Who Bet His Own Head (no famous name in the title)",
+        "The Darkest Winter Tale Ever Told About Yuki-onna (obscure figure)",
+        "The God Who Orchestrated His Own Death (no famous name in the title)"
       ]
     },
     "ch5_midnight_horror": {
@@ -400,7 +403,7 @@
       "hook_styles": [
         "Start at the single most emotional moment of the story (the rescue, the reunion), then rewind to explain how it happened",
         "Open with a concrete act of loyalty or courage by a named animal, stated as fact, and hint at the payoff years later",
-        "Open with a reversal teaser: 'He saved this animal... years later it saved him'",
+        "Open with a reversal teaser that hints the animal and the human will end up needing each other (use fresh wording every time)",
         "Open with what the animal did when nobody was watching, then promise a twist most viewers will not see coming",
         "Open with a tiny helpless animal in danger and the one human or animal who refused to leave it"
       ],
@@ -414,16 +417,19 @@
       ],
       "style": "warm",
       "title_formulas": [
-        "He Saved [animal]... Years Later [it saved him]",
         "The [adjective] [animal] Who Never Gave Up",
         "This [animal] Waited [specific time] For [person]",
-        "She Rescued [animal]. What It Did Next Changed Everything"
+        "She Rescued [animal]. What It Did Next Changed Everything",
+        "[Number] Years Later, This [animal] Finally [emotional payoff]",
+        "Everyone Laughed At This [animal]. Then [surprising moment]",
+        "He Left [animal] Behind. It Found Him Anyway"
       ],
       "proven_examples": [
-        "He Saved This Pup... Years Later It Saved Him",
+        "He Saved This Pup... Years Later It Saved Him (the 'saved him' ending is now overused: never reuse that wording or structure)",
         "The Three-Legged Dog Who Never Gave Up"
       ],
       "weak_examples": [
+        "'Years Later It Saved Him' copies (used three times already, viewers see a repeat)",
         "Why Did A Wild Fox Sneak Inside This Cabin? (vague question, 0 views)",
         "Why This Dog Waits Here Every Sunset... (vague, 0 views)",
         "What an Old Dog Taught Me About Love (abstract)"
