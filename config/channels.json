@@ -295,7 +295,7 @@
       "enabled": true,
       "concept": "Two-Sentence Horror, Urban Legends & Plot-Twist Micro Creepypasta",
       "language": "en",
-      "voice": "en-US-BrianMultilingualNeural",
+      "voice": "en-US-ChristopherNeural",
       "voice_enabled": true,
       "rate": "-8%",
       "pitch": "-6Hz",
