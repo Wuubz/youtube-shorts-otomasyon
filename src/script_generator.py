@@ -135,6 +135,24 @@ def _direction_block(direction: dict[str, str], channel: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n\n"
 
 
+POPULAR_CANDIDATES = 10
+
+
+def _popular_block(channel: dict[str, Any]) -> str:
+    """Kanalda tanınmış figür listesi varsa ana özneyi bunlardan seçtirir (obskür figürlere kaymayı önler)."""
+    subjects = channel.get("popular_subjects") or []
+    if not subjects:
+        return ""
+    shortlist = ", ".join(random.sample(subjects, min(POPULAR_CANDIDATES, len(subjects))))
+    return (
+        "\nWELL-KNOWN SUBJECTS ONLY: the central figure of the video must be one of these famous, instantly "
+        f"recognisable figures (choose one that is not the central subject of a recent video): {shortlist}.\n"
+        "Never pick an obscure, minor or purely regional figure that a casual viewer would not know. "
+        "Instead, make the story about the darkest, strangest or least-known secret, myth or consequence "
+        "of that famous figure, so the title can name the figure the viewer already recognises.\n"
+    )
+
+
 def _build_prompt(channel: dict[str, Any], past_topics: list[str], direction: dict[str, str]) -> str:
     history_block = "\n".join(f"- {t}" for t in past_topics[-MAX_HISTORY_TOPICS:]) or "- (none yet)"
     recent_block = "\n".join(f"- {t}" for t in past_topics[-RECENT_SUBJECTS_SHOWN:]) or "- (none yet)"
@@ -150,7 +168,7 @@ TOPICS ALREADY USED (never repeat or closely paraphrase any of them):
 
 SUBJECT VARIETY: the central subject of the new video (the person, object, place, creature, event or myth it is mainly about) must be completely different from the central subject of each of these recent videos, even if you would approach it from a new angle. If a recent video was about Voyager, do not write about Voyager; if one was about a vanished ship, do not write about another vanished ship:
 {recent_block}
-
+{_popular_block(channel)}
 {_direction_block(direction, channel)}
 THE HOOK (scene 1, the 3 seconds that decide everything):
 - Scene 1 narration is 6 to 12 words. It must open a curiosity loop the viewer can only close by watching to the end: state a shocking, impossible or contradictory fact, or a direct challenge, but WITHHOLD the explanation until the last third of the video.

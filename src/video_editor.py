@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 MUSIC_DIR = ROOT_DIR / "assets" / "music"
+SFX_DIR = ROOT_DIR / "assets" / "sfx"
 
 FPS = 30
 WIDTH, HEIGHT = 1080, 1920
@@ -46,6 +47,17 @@ def pick_music(channel_id: str) -> Path | None:
             if tracks:
                 return random.choice(tracks)
     return None
+
+
+def _sfx_plan(durations: list[float], style: dict, total: float) -> list[tuple[Path, float, float]]:
+    """Kanca ses efektleri: (dosya, başlangıç sn, ses düzeyi). Dosya yoksa o efekt sessizce atlanır."""
+    plan: list[tuple[Path, float, float]] = [
+        (SFX_DIR / "whoosh.mp3", 0.0, 0.55),        # açılışta kaydırmayı engelleyen hava akımı
+        (SFX_DIR / "sub_drop.mp3", 2.5, 0.40),      # kanca cümlesinin sonunda hafif bas darbesi
+    ]
+    if style.get("glitch") and durations and durations[0] > 1.5:   # korku: 2. sahneye geçerken dijital bozulma
+        plan.append((SFX_DIR / "glitch.mp3", durations[0], 0.35))
+    return [(path, at, level) for path, at, level in plan if path.is_file() and at < total - 0.5]
 
 
 def _effect_sequence(effects: list[str], count: int) -> list[str]:
@@ -199,22 +211,38 @@ def _assemble(
     cmd += ["-i", str(audio.audio_path.resolve())]
     if music:
         cmd += ["-stream_loop", "-1", "-i", str(music.resolve())]
+    sfx = _sfx_plan(audio.durations, style, total)
+    sfx_base = n + (2 if music else 1)
+    for path, _, _ in sfx:
+        cmd += ["-i", str(path.resolve())]
     bar_index: int | None = None
     if style.get("progress"):
-        bar_index = n + (2 if music else 1)
+        bar_index = sfx_base + len(sfx)
         cmd += ["-f", "lavfi", "-i", f"color=c={style['progress']}@0.9:s={WIDTH}x{BAR_HEIGHT}:r={FPS}:d={total + 1:.2f}"]
 
     graph = _video_graph(n, scene_frames, use_xfade, style, bar_index, total, audio.ass_path.name)
+    voice_chain = f"[{n}:a]aresample=44100,{VOICE_MASTERING}"
+    labels = ["[voice]"]
     if music:
         fade_start = max(total - 2.0, 0.0)
-        graph += [
-            f"[{n}:a]aresample=44100,{VOICE_MASTERING}[voice]",
+        graph.append(
             f"[{n + 1}:a]aresample=44100,volume={MUSIC_VOLUME},afade=t=in:d=1,"
-            f"afade=t=out:st={fade_start:.2f}:d=2[bg]",
-            "[voice][bg]amix=inputs=2:duration=first:dropout_transition=0,volume=2,alimiter=limit=0.95[a]",
-        ]
+            f"afade=t=out:st={fade_start:.2f}:d=2[bg]"
+        )
+        labels.append("[bg]")
+    for k, (_, at, level) in enumerate(sfx):
+        ms = round(at * 1000)
+        # apad: efekt bitince girdi sessizlikle sürer, böylece amix kalan sesleri yükseltmez
+        graph.append(f"[{sfx_base + k}:a]aresample=44100,volume={level},adelay={ms}|{ms},apad[s{k}]")
+        labels.append(f"[s{k}]")
+    if len(labels) == 1:
+        graph.append(f"{voice_chain}[a]")
     else:
-        graph.append(f"[{n}:a]aresample=44100,{VOICE_MASTERING}[a]")
+        graph.append(f"{voice_chain}[voice]")
+        graph.append(
+            f"{''.join(labels)}amix=inputs={len(labels)}:duration=first:dropout_transition=0,"
+            f"volume={len(labels)},alimiter=limit=0.95[a]"
+        )
 
     cmd += [
         "-filter_complex", ";".join(graph),

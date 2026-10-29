@@ -39,6 +39,7 @@ REQUIRED_CHANNEL_FIELDS = (
 # Çeşitlilik için isteğe bağlı listeler: her videoda bunlardan rastgele biri seçilir
 OPTIONAL_STRING_LISTS = (
     "sub_themes", "hook_styles", "visual_moods", "title_formulas", "proven_examples", "weak_examples",
+    "popular_subjects",
 )
 VALID_SCHEDULE_MODES = ("scheduled", "immediate")
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")

@@ -29,7 +29,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "caption": {
             "font": "DejaVu Sans", "size": 86, "bold": True, "uppercase": True,
             "colors": ["&H0000FFFF", "&H00FFFFFF"], "accent": "&H00FFD84A", "outline": "&H00501400",
-            "outline_w": 7, "shadow": 3, "box": False, "margin_v": 520, "anim": "pop", "chunk": 3,
+            "outline_w": 7, "shadow": 3, "box": False, "margin_v": 520, "anim": "pop", "chunk": 3, "highlight": "&H0000FF00",
         },
     },
     # Karanlık tarih: sepya, yoğun tanecik, titreyen eski film hissi, yavaş hareket
@@ -43,7 +43,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "caption": {
             "font": "DejaVu Serif", "size": 82, "bold": True, "uppercase": False,
             "colors": ["&H00E6F0F5", "&H0090C8F0"], "accent": "&H003C3CE6", "outline": "&H00101828",
-            "outline_w": 6, "shadow": 4, "box": False, "margin_v": 500, "anim": "fade", "chunk": 3,
+            "outline_w": 6, "shadow": 4, "box": False, "margin_v": 500, "anim": "fade", "chunk": 3, "highlight": "&H0000F0FF",
         },
     },
     # Psikoloji: yüksek kontrast noir, hızlı kesmeler, kutulu altyazı
@@ -57,7 +57,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "caption": {
             "font": "Liberation Sans", "size": 80, "bold": True, "uppercase": True,
             "colors": ["&H00FFFFFF", "&H00FFFFFF"], "accent": "&H004444EF", "outline": "&H00000000",
-            "outline_w": 18, "shadow": 0, "box": True, "margin_v": 540, "anim": "rise", "chunk": 3,
+            "outline_w": 18, "shadow": 0, "box": True, "margin_v": 540, "anim": "rise", "chunk": 3, "highlight": "&H0000FFFF",
         },
     },
     # Mitoloji: altın tonlar, destansı yavaş yaklaşma, ışıma, daire geçişleri
@@ -71,7 +71,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "caption": {
             "font": "DejaVu Serif", "size": 88, "bold": True, "uppercase": True,
             "colors": ["&H0050C8FF", "&H00FFFFFF"], "accent": "&H003CA8FF", "outline": "&H00102850",
-            "outline_w": 8, "shadow": 4, "box": False, "margin_v": 500, "anim": "pop", "chunk": 2,
+            "outline_w": 8, "shadow": 4, "box": False, "margin_v": 500, "anim": "pop", "chunk": 2, "highlight": "&H0000FF40",
         },
     },
     # Korku: soğuk yeşil-mavi, titrek el kamerası, glitch, yoğun tanecik
@@ -85,7 +85,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "caption": {
             "font": "DejaVu Sans", "size": 84, "bold": True, "uppercase": True,
             "colors": ["&H00F0F0F0", "&H00F0F0F0"], "accent": "&H002020E0", "outline": "&H00000010",
-            "outline_w": 9, "shadow": 5, "box": False, "margin_v": 480, "anim": "shake", "chunk": 2,
+            "outline_w": 9, "shadow": 5, "box": False, "margin_v": 480, "anim": "shake", "chunk": 2, "highlight": "&H0000FFFF",
         },
     },
     # Sevimli hikayeler: sıcak, parlak, yumuşak ışıma, zıplayan altyazı
@@ -99,7 +99,7 @@ STYLES: dict[str, dict[str, Any]] = {
         "caption": {
             "font": "DejaVu Sans", "size": 90, "bold": True, "uppercase": False,
             "colors": ["&H00FFFFFF", "&H00B4B4FF", "&H0070F0FF"], "accent": "&H00B450FF", "outline": "&H00662D8A",
-            "outline_w": 8, "shadow": 3, "box": False, "margin_v": 540, "anim": "bounce", "chunk": 3,
+            "outline_w": 8, "shadow": 3, "box": False, "margin_v": 540, "anim": "bounce", "chunk": 3, "highlight": "&H0000FF80",
         },
     },
 }

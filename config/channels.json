@@ -147,7 +147,7 @@
       "enabled": true,
       "concept": "Dark Psychology Tricks, Human Behavior & Stoic Mindset Rules",
       "language": "en",
-      "voice": "en-US-AndrewMultilingualNeural",
+      "voice": "en-US-BrianMultilingualNeural",
       "voice_enabled": true,
       "rate": "+0%",
       "pitch": "+0Hz",
@@ -216,6 +216,13 @@
     "ch4_epic_mythology": {
       "enabled": true,
       "concept": "Greek, Norse, Egyptian & Japanese Mythology Stories",
+      "popular_subjects": [
+        "Zeus", "Hades", "Poseidon", "Hera", "Athena", "Apollo", "Artemis", "Ares", "Aphrodite", "Hermes",
+        "Dionysus", "Persephone", "Medusa", "the Minotaur", "Kronos", "Prometheus", "Heracles",
+        "Odin", "Thor", "Loki", "Freya", "Fenrir", "Hel", "Jormungandr", "the Valkyries",
+        "Anubis", "Ra", "Osiris", "Isis", "Set", "Horus", "Apophis",
+        "Amaterasu", "Susanoo", "Izanami"
+      ],
       "language": "en",
       "voice": "en-AU-WilliamMultilingualNeural",
       "voice_enabled": true,

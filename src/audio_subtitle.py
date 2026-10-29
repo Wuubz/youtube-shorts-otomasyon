@@ -161,8 +161,9 @@ def _word_entries(events: list[Event], text: str, duration: float) -> list[tuple
 
 def _chunk_entries(
     entries: list[tuple[float, float, str]], max_words: int = 3, max_chars: int = 20
-) -> list[tuple[float, float, str]]:
-    """Kelimeleri ekranda dinamik görünecek 1-3 kelimelik altyazı bloklarına böler."""
+) -> list[tuple[float, float, str, list[tuple[float, float]]]]:
+    """Kelimeleri ekranda dinamik görünecek 1-3 kelimelik altyazı bloklarına böler.
+    Her blok, kelime başına (başlangıç, bitiş) zamanlarını da taşır (kelime vurgulama için)."""
     groups: list[list[tuple[float, float, str]]] = []
     current: list[tuple[float, float, str]] = []
     for entry in entries:
@@ -173,23 +174,27 @@ def _chunk_entries(
             current = []
     if current:
         groups.append(current)
-    return [(g[0][0], g[-1][1], " ".join(e[2] for e in g)) for g in groups]
+    return [(g[0][0], g[-1][1], " ".join(e[2] for e in g), [(e[0], e[1]) for e in g]) for g in groups]
+
+
+Cue = tuple[float, float, str, list[tuple[float, float]]]   # başlangıç, bitiş, metin, kelime zamanları
 
 
 def _scene_cues(
     events: list[Event], text: str, duration: float, offset: float, speed: float, max_words: int = 3
-) -> list[tuple[float, float, str]]:
+) -> list[Cue]:
     entries = [(s / speed, e / speed, t) for s, e, t in _word_entries(events, text, duration)]
     chunks = _chunk_entries(entries, max_words=max_words)
     scene_end = offset + duration
-    cues: list[tuple[float, float, str]] = []
-    for i, (start, end, chunk_text) in enumerate(chunks):
+    cues: list[Cue] = []
+    for i, (start, end, chunk_text, word_times) in enumerate(chunks):
         abs_start = min(offset + start, scene_end - 0.1)
         next_start = offset + chunks[i + 1][0] if i + 1 < len(chunks) else scene_end
         abs_end = max(offset + end, abs_start + 0.25)
         if next_start - abs_end < 0.35:  # küçük boşluklarda altyazı yanıp sönmesin
             abs_end = next_start
-        cues.append((abs_start, min(abs_end, scene_end), chunk_text))
+        words = [(offset + ws, offset + we) for ws, we in word_times]
+        cues.append((abs_start, min(abs_end, scene_end), chunk_text, words))
     return cues
 
 
@@ -207,12 +212,16 @@ def _is_emphasis(word: str) -> bool:
     return any(ch.isdigit() for ch in bare) or bare in POWER_WORDS
 
 
-def _caption_text(text: str, caption: dict, base_color: str) -> str:
-    """Rakamları ve güç kelimelerini vurgu renginde işaretler."""
+def _caption_text(
+    text: str, caption: dict, base_color: str, active: int | None = None, active_color: str | None = None
+) -> str:
+    """Rakamları ve güç kelimelerini vurgu renginde işaretler; `active` kelimesi parlak renkte gösterilir."""
     out = []
-    for word in _ass_escape(text).split():
+    for index, word in enumerate(_ass_escape(text).split()):
         shown = word.upper() if caption["uppercase"] else word
-        if _is_emphasis(word):
+        if index == active and active_color:
+            out.append(r"{\1c" + active_color + "}" + shown + r"{\1c" + base_color + "}")
+        elif _is_emphasis(word):
             out.append(r"{\1c" + caption["accent"] + "}" + shown + r"{\1c" + base_color + "}")
         else:
             out.append(shown)
@@ -231,8 +240,23 @@ def _animation(kind: str, y: int) -> str:
     return r"\fad(50,30)\fscx86\fscy86\t(0,120,\fscx100\fscy100)"  # pop
 
 
+def _karaoke_slices(cue: Cue, token_count: int) -> list[tuple[float, float]]:
+    """Bloğun ekranda kaldığı süreyi, her kelimenin okunduğu aralıklara böler (kesintisiz ve sıralı)."""
+    start, end, _, words = cue
+    if len(words) != token_count or token_count == 0:
+        return [(start, end)]
+    starts = [start] + [min(max(ws, start), end) for ws, _ in words[1:]]
+    for i in range(1, len(starts)):                  # sıralı ve en az 40 ms
+        starts[i] = max(starts[i], starts[i - 1] + 0.04)
+    slices = []
+    for i, s in enumerate(starts):
+        e = starts[i + 1] if i + 1 < len(starts) else end
+        slices.append((s, max(e, s + 0.04)))
+    return slices
+
+
 def write_ass(
-    cues: list[tuple[float, float, str]], dest: Path, style: dict | None = None, highlight_from: float | None = None,
+    cues: list[Cue], dest: Path, style: dict | None = None, highlight_from: float | None = None,
     labels: list[tuple[float, float, str]] | None = None,
 ) -> None:
     """1080x1920 için kanal stiline göre (font, renk, kutu, animasyon) .ass altyazı dosyası yazar."""
@@ -261,16 +285,27 @@ def write_ass(
     y = 1920 - caption["margin_v"]
     colors = caption["colors"]
     lines = []
-    for index, (start, end, text) in enumerate(cues):
+    glow = caption.get("highlight", "&H0000FFFF")
+    for index, cue in enumerate(cues):
+        start, end, text, _ = cue
         base = colors[index % len(colors)]
         closing = highlight_from is not None and start >= highlight_from - 0.05
+        active_color = glow
         if closing:  # kapanıştaki yorum sorusu vurgu renginde ve biraz daha büyük görünür
             base = caption["accent"]
+            active_color = "&H00FFFFFF"
         size = "{" + r"\fs" + str(round(caption["size"] * 1.1)) + "}" if closing else ""
-        effect = "{" + _animation(caption["anim"], y) + r"\1c" + base + "}" + size
-        lines.append(
-            f"Dialogue: 0,{_ass_time(start)},{_ass_time(end)},Default,,0,0,0,,{effect}{_caption_text(text, caption, base)}\n"
-        )
+        # Karaoke: blok yerinde kalır, o an okunan kelime parlar. Giriş animasyonu yalnızca ilk kelimede oynar.
+        token_count = len(_ass_escape(text).split())
+        slices = _karaoke_slices(cue, token_count)
+        for k, (s, e) in enumerate(slices):
+            motion = _animation(caption["anim"], y) if k == 0 else ""
+            effect = "{" + motion + r"\1c" + base + "}" + size
+            active = k if len(slices) == token_count else None   # zamanlar uyuşmazsa vurgulama yapılmaz
+            lines.append(
+                f"Dialogue: 0,{_ass_time(s)},{_ass_time(e)},Default,,0,0,0,,"
+                f"{effect}{_caption_text(text, caption, base, active, active_color)}\n"
+            )
     for start, end, text in labels or []:
         lines.append(
             f"Dialogue: 1,{_ass_time(start)},{_ass_time(end)},Label,,0,0,0,,"
