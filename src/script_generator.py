@@ -139,6 +139,14 @@ def _pick_direction(channel: dict[str, Any]) -> dict[str, str]:
     return direction
 
 
+def _merge_examples(static: list[str], learned: list[str]) -> list[str]:
+    """Elle yazılmış örneklere öğrenilmiş başlıkları ekler. Statik girdiler notlu olabilir ('Başlık (aşırı kullanıldı)');
+    bir statik girdinin başladığı öğrenilmiş başlık atlanır, böylece notla yasaklanan kalıp geri gelmez."""
+    known = [_normalize(s) for s in static]
+    extra = [t for t in learned if not any(k.startswith(_normalize(t)) for k in known)]
+    return list(static) + extra
+
+
 def _direction_block(direction: dict[str, str], channel: dict[str, Any]) -> str:
     if not direction:
         return ""
@@ -153,8 +161,8 @@ def _direction_block(direction: dict[str, str], channel: dict[str, Any]) -> str:
     if "title_formula" in direction:
         lines.append(f"- Title pattern (adapt it to your topic, keep it truthful): {direction['title_formula']}.")
     learned = get_learned(channel["id"])
-    proven = list(channel.get("proven_examples") or []) + [t for t in learned.get("winners", []) if t not in (channel.get("proven_examples") or [])]
-    weak = list(channel.get("weak_examples") or []) + [t for t in learned.get("losers", []) if t not in (channel.get("weak_examples") or [])]
+    proven = _merge_examples(channel.get("proven_examples") or [], learned.get("winners", []))
+    weak = _merge_examples(channel.get("weak_examples") or [], learned.get("losers", []))
     if proven:
         lines.append("- Titles that performed BEST on this channel (copy their energy, not their topics): " + "; ".join(proven) + ".")
     if weak:
