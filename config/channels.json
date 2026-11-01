@@ -69,6 +69,13 @@
       "weak_examples": [
         "The Invisible Doorway That Could Destroy Earth (vague)",
         "three separate Voyager videos in a row (repetitive)"
+      ],
+      "length_profile": "short",
+      "series_tag": "Cosmic File #{n}",
+      "series_pitch": "A new space mystery every day",
+      "follow_lines": [
+        "Follow for a new cosmic mystery daily.",
+        "Follow. The universe gets stranger tomorrow."
       ]
     },
     "ch2_dark_history": {
@@ -141,6 +148,13 @@
         "The Darkest Siege Tactic in Ancient History (vague superlative)",
         "The Empire That Vanished Overnight (no concrete subject)",
         "three vanished-ship stories in a row (repetitive)"
+      ],
+      "length_profile": "short",
+      "series_tag": "Case File #{n}",
+      "series_pitch": "A new forgotten chapter of history every day",
+      "follow_lines": [
+        "Follow for more forgotten history.",
+        "Follow. History has more secrets."
       ]
     },
     "ch3_dark_psychology": {
@@ -211,17 +225,53 @@
       ],
       "weak_examples": [
         "Why Solitude Makes You Untouchable (abstract, no relatable situation)"
+      ],
+      "series_tag": "Rule #{n}",
+      "series_pitch": "A new dark psychology rule every day",
+      "follow_lines": [
+        "Follow for a new mind rule daily.",
+        "Follow. Tomorrow's rule is darker."
       ]
     },
     "ch4_epic_mythology": {
       "enabled": true,
       "concept": "Greek, Norse, Egyptian & Japanese Mythology Stories",
       "popular_subjects": [
-        "Zeus", "Hades", "Poseidon", "Hera", "Athena", "Apollo", "Artemis", "Ares", "Aphrodite", "Hermes",
-        "Dionysus", "Persephone", "Medusa", "the Minotaur", "Kronos", "Prometheus", "Heracles",
-        "Odin", "Thor", "Loki", "Freya", "Fenrir", "Hel", "Jormungandr", "the Valkyries",
-        "Anubis", "Ra", "Osiris", "Isis", "Set", "Horus", "Apophis",
-        "Amaterasu", "Susanoo", "Izanami"
+        "Zeus",
+        "Hades",
+        "Poseidon",
+        "Hera",
+        "Athena",
+        "Apollo",
+        "Artemis",
+        "Ares",
+        "Aphrodite",
+        "Hermes",
+        "Dionysus",
+        "Persephone",
+        "Medusa",
+        "the Minotaur",
+        "Kronos",
+        "Prometheus",
+        "Heracles",
+        "Odin",
+        "Thor",
+        "Loki",
+        "Freya",
+        "Fenrir",
+        "Hel",
+        "Jormungandr",
+        "the Valkyries",
+        "Anubis",
+        "Ra",
+        "Osiris",
+        "Isis",
+        "Set",
+        "Horus",
+        "Apophis",
+        "Amaterasu",
+        "Susanoo",
+        "Izanami"
       ],
       "language": "en",
       "voice": "en-AU-WilliamMultilingualNeural",
@@ -292,6 +342,12 @@
         "The God Who Bet His Own Head (no famous name in the title)",
         "The Darkest Winter Tale Ever Told About Yuki-onna (obscure figure)",
         "The God Who Orchestrated His Own Death (no famous name in the title)"
+      ],
+      "series_tag": "Myth #{n}",
+      "series_pitch": "A new forbidden myth every day",
+      "follow_lines": [
+        "Follow for more forbidden myths.",
+        "Follow. The gods have more secrets."
       ]
     },
     "ch5_midnight_horror": {
@@ -360,6 +416,13 @@
       "weak_examples": [
         "'3 Rules' / 'Three Rules' stories (used twice, almost no views: do NOT use a rules format)",
         "The Silent Campfire in the Woods (abstract)"
+      ],
+      "length_profile": "short",
+      "series_tag": "Nightmare #{n}",
+      "series_pitch": "A new micro-horror story every night",
+      "follow_lines": [
+        "Follow if you dare.",
+        "Follow. Never look behind."
       ]
     },
     "ch6_universal_stories": {
@@ -433,6 +496,12 @@
         "Why Did A Wild Fox Sneak Inside This Cabin? (vague question, 0 views)",
         "Why This Dog Waits Here Every Sunset... (vague, 0 views)",
         "What an Old Dog Taught Me About Love (abstract)"
+      ],
+      "series_tag": "Story #{n}",
+      "series_pitch": "A new heartwarming animal story every day",
+      "follow_lines": [
+        "Follow for more heartwarming stories.",
+        "Follow. Tomorrow's story will melt you."
       ]
     }
   }

@@ -12,7 +12,9 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-from src.config_loader import MAX_HISTORY_TOPICS, get_gemini_api_key, get_themes, get_titles
+from src.config_loader import (
+    MAX_HISTORY_TOPICS, get_gemini_api_key, get_learned, get_themes, get_titles, get_video_count,
+)
 
 log = logging.getLogger(__name__)
 
@@ -54,10 +56,25 @@ MAX_TITLE_LENGTH = 70
 MAX_TAGS_CHARS = 400
 TAG_COUNT = 15
 MIN_SCENES, MAX_SCENES = 8, 10
-# Doğal konuşma hızında (1.0x, atempo gerekmeden) ~42-50 sn: prompt'a verilen hedef kelime aralığı
-TARGET_MIN_WORDS, TARGET_MAX_WORDS = 90, 115
-# Gemini kelime saymada küçük sapmalar yapabilir; bu pencerenin dışı yeniden denenir (en fazla ~54 sn)
-MIN_TOTAL_WORDS, MAX_TOTAL_WORDS = 85, 125
+# Uzunluk profilleri (channels.json `length_profile`). `target` prompt'a verilen hedef kelime aralığı (doğal konuşma
+# hızında, atempo gerekmeden); `window` Gemini'nin kelime saymadaki küçük sapmalarını tolere eden doğrulama aralığı.
+# "short": 25-32 sn, ~3 sn'lik sahneler (kaydırma oranını düşürmek için hızlı kesme denemesi).
+LENGTH_PROFILES: dict[str, dict[str, Any]] = {
+    "standard": {
+        "scenes": "8 or 9", "target": (90, 115), "window": (85, 125), "edge": "6 to 12", "body": "10 to 14",
+        "question": "6 to 14", "seconds": "42-50",
+    },
+    # Ölçüm: edge-tts + sahne arası duraklamalarla ~2 kelime/sn (81 kelime = 40,9 sn); takip çağrısı (~5 kelime) sonradan eklenir
+    "short": {
+        "scenes": "9 or 10", "target": (48, 58), "window": (42, 68), "edge": "5 to 8", "body": "4 to 7",
+        "question": "5 to 9", "seconds": "26-32",
+    },
+}
+DEFAULT_LENGTH_PROFILE = "standard"
+
+
+def _profile(channel: dict[str, Any]) -> dict[str, Any]:
+    return LENGTH_PROFILES[channel.get("length_profile", DEFAULT_LENGTH_PROFILE)]
 MAX_BASE_IMAGE_PROMPT_CHARS = 450
 MAX_IDENTITY_CHARS = 140       # sabit karakter/mekan tarifi başına üst sınır
 MAX_LABELS, MAX_LABEL_CHARS = 3, 28
@@ -135,7 +152,9 @@ def _direction_block(direction: dict[str, str], channel: dict[str, Any]) -> str:
         lines.append(f"- Hook style for scene 1: {direction['hook_style']}.")
     if "title_formula" in direction:
         lines.append(f"- Title pattern (adapt it to your topic, keep it truthful): {direction['title_formula']}.")
-    proven, weak = channel.get("proven_examples") or [], channel.get("weak_examples") or []
+    learned = get_learned(channel["id"])
+    proven = list(channel.get("proven_examples") or []) + [t for t in learned.get("winners", []) if t not in (channel.get("proven_examples") or [])]
+    weak = list(channel.get("weak_examples") or []) + [t for t in learned.get("losers", []) if t not in (channel.get("weak_examples") or [])]
     if proven:
         lines.append("- Titles that performed BEST on this channel (copy their energy, not their topics): " + "; ".join(proven) + ".")
     if weak:
@@ -171,6 +190,13 @@ def _build_prompt(channel: dict[str, Any], past_topics: list[str], direction: di
     history_block = "\n".join(f"- {t}" for t in past_topics[-MAX_HISTORY_TOPICS:]) or "- (none yet)"
     recent_block = "\n".join(f"- {t}" for t in past_topics[-RECENT_SUBJECTS_SHOWN:]) or "- (none yet)"
     titles_block = "\n".join(f"- {t}" for t in get_titles(channel["id"])[-15:]) or "- (none yet)"
+    profile = _profile(channel)
+    pace_rule = ""
+    if channel.get("length_profile") == "short":
+        pace_rule = (
+            " FAST CUTS: every scene is ONE punchy beat (one short sentence, never a second clause) and the image changes "
+            "every ~3 seconds, so cut every explanation to its sharpest words. No filler, no recap, no throat-clearing."
+        )
     return f"""You are a senior YouTube Shorts scriptwriter and retention strategist. Your only goal: the viewer cannot swipe away before the end, then wants to comment.
 
 CHANNEL CONCEPT: {channel['concept']}
@@ -189,7 +215,7 @@ RECENT TITLES ON THIS CHANNEL (the new title must NOT reuse their wording, sente
 {_popular_block(channel)}
 {_direction_block(direction, channel)}
 THE HOOK (scene 1, the 3 seconds that decide everything):
-- Scene 1 narration is 6 to 12 words. It must open a curiosity loop the viewer can only close by watching to the end: state a shocking, impossible or contradictory fact, or a direct challenge, but WITHHOLD the explanation until the last third of the video.
+- Scene 1 narration is {profile['edge']} words. It must open a curiosity loop the viewer can only close by watching to the end: state a shocking, impossible or contradictory fact, or a direct challenge, but WITHHOLD the explanation until the last third of the video.
 - Start in the middle of the action with the most surprising thing. No greeting, no throat-clearing. Never begin with: "Did you know", "Imagine", "Have you ever", "In this video", "Today", "Welcome", "Let me tell you", "Ever wondered".
 - Use at least one of: a precise number or date, a direct "you", a vivid forbidden or impossible concept, a belief of the viewer that you contradict.
 - The hook must be honest: the video must actually deliver what the hook promises.
@@ -199,11 +225,11 @@ RETENTION STRUCTURE:
 - End scenes on tension that pulls into the next scene; do not wrap up early.
 
 THE ENDING (last scene) = COMMENT BAIT:
-- The last scene narration must be a short, specific question about THIS video's topic that is effortless to answer in a comment, ideally a choice between two options or a "Would you...?" opinion. 6 to 14 words, ends with a question mark. Never generic ("What do you think?").
+- The last scene narration must be a short, specific question about THIS video's topic that is effortless to answer in a comment, ideally a choice between two options or a "Would you...?" opinion. {profile['question']} words, ends with a question mark. Never generic ("What do you think?"). Do NOT add a follow or subscribe line; the code appends it.
 - Put exactly that question in the comment_question field as well.
 
 SCRIPT RULES:
-- Use 8 or 9 scenes. LENGTH IS STRICT: the total narration across all scenes must be between {TARGET_MIN_WORDS} and {TARGET_MAX_WORDS} words (never more). Scene 1 and the last scene are short (6-12 words); the other scenes are 10 to 14 words each. Count the words before answering. The voiceover is read at natural speed, so the video must finish in about 42-50 seconds without any speed-up.
+- Use {profile['scenes']} scenes. LENGTH IS STRICT: the total narration across all scenes must be between {profile['target'][0]} and {profile['target'][1]} words (never more). Scene 1 and the last scene are short ({profile['edge']} words); the other scenes are {profile['body']} words each. Count the words before answering. The voiceover is read at natural speed, so the video must finish in about {profile['seconds']} seconds without any speed-up.{pace_rule}
 - Write like a gifted human storyteller or podcast host talking to one listener, NOT like an encyclopedia. Use natural pauses: commas, dashes and short punchy sentences ("Seven seconds. That's all it took."). Vary sentence length, use contractions and a warm conversational voice. Avoid lists of facts, stiff textbook phrasing and long sub-clauses.
 - Original storytelling only. No real-person defamation, no graphic gore, no hate speech, no medical or political misinformation. Keep it advertiser-friendly.
 - Do not use emojis, hashtags, stage directions or scene numbers inside narration.
@@ -289,15 +315,33 @@ def _check_famous_title(title: str, channel: dict[str, Any]) -> None:
     raise ValueError(f"Başlıkta tanınmış bir figürün adı yok: '{title}'")
 
 
-def _finalize_description(description: str, question: str = "") -> str:
+def _finalize_description(description: str, question: str = "", pitch: str = "") -> str:
     text = (description or "").strip()
     if not text:
         raise ValueError("Açıklama boş")
     if "#shorts" not in text.lower():
         text = f"{text}\n\n#Shorts"
+    header = []
     if question:
-        text = f"💬 {question}\n\n{text}"   # yorum sorusu açıklamanın ilk satırı
+        header.append(f"💬 {question}")      # yorum sorusu açıklamanın ilk satırı
+    if pitch:
+        header.append(f"🔔 {pitch} - subscribe so you never miss one.")
+    if header:
+        text = "\n".join(header) + f"\n\n{text}"
     return text[:4900]
+
+
+def _add_series_and_follow(final_scenes: list[dict[str, Any]], channel: dict[str, Any]) -> None:
+    """Seri etiketini (ör. 'Rule #17') ilk sahnenin üst etiketine, takip çağrısını son sahnenin sesine ekler.
+
+    Kelime sınırı denetiminden sonra çalışır: çağrı Gemini'nin kelime bütçesinden sayılmaz.
+    """
+    series_tag = channel.get("series_tag")
+    if series_tag:
+        final_scenes[0]["label"] = series_tag.format(n=get_video_count(channel["id"]) + 1)
+    follow_lines = channel.get("follow_lines") or []
+    if follow_lines:
+        final_scenes[-1]["narration"] = f"{final_scenes[-1]['narration']} {random.choice(follow_lines)}"
 
 
 def _finalize_tags(tags: list[str]) -> list[str]:
@@ -408,19 +452,19 @@ def _finalize(
     question = _ensure_closing_question(final_scenes, raw.comment_question)
 
     total_words = sum(len(s["narration"].split()) for s in final_scenes)
-    if not MIN_TOTAL_WORDS <= total_words <= MAX_TOTAL_WORDS:
-        raise ValueError(
-            f"Toplam kelime sayısı {total_words}; {MIN_TOTAL_WORDS}-{MAX_TOTAL_WORDS} aralığı dışında"
-        )
+    min_words, max_words = _profile(channel)["window"]
+    if not min_words <= total_words <= max_words:
+        raise ValueError(f"Toplam kelime sayısı {total_words}; {min_words}-{max_words} aralığı dışında")
 
     title = _finalize_title(raw.title)
     _check_title_variety(title, get_titles(channel["id"]))
     _check_famous_title(title, channel)
 
+    _add_series_and_follow(final_scenes, channel)
     return {
         "topic_summary": topic,
         "title": title,
-        "description": _finalize_description(raw.description, question),
+        "description": _finalize_description(raw.description, question, channel.get("series_pitch", "")),
         "tags": _finalize_tags(raw.tags),
         "comment_question": question,
         "sub_theme": (direction or {}).get("sub_theme"),

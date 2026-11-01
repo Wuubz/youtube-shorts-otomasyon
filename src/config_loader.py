@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 ROOT_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT_DIR / "config" / "channels.json"
 HISTORY_PATH = ROOT_DIR / "data" / "history.json"
+LEARNED_PATH = ROOT_DIR / "data" / "learned.json"
 MAX_HISTORY_TOPICS = 200
 MAX_THEME_HISTORY = 60
 MAX_TITLE_HISTORY = 40
@@ -40,9 +41,10 @@ REQUIRED_CHANNEL_FIELDS = (
 # Çeşitlilik için isteğe bağlı listeler: her videoda bunlardan rastgele biri seçilir
 OPTIONAL_STRING_LISTS = (
     "sub_themes", "hook_styles", "visual_moods", "title_formulas", "proven_examples", "weak_examples",
-    "popular_subjects",
+    "popular_subjects", "follow_lines",
 )
 VALID_SCHEDULE_MODES = ("scheduled", "immediate")
+VALID_LENGTH_PROFILES = ("standard", "short")
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
@@ -105,6 +107,10 @@ def _validate_channel(channel_id: str, cfg: dict[str, Any]) -> None:
         values = cfg.get(key, [])
         if not isinstance(values, list) or not all(isinstance(v, str) and v.strip() for v in values):
             raise ConfigError(f"{channel_id}: {key} boş olmayan metinlerden oluşan bir liste olmalı")
+    if cfg.get("length_profile", "standard") not in VALID_LENGTH_PROFILES:
+        raise ConfigError(f"{channel_id}: length_profile {VALID_LENGTH_PROFILES} değerlerinden biri olmalı")
+    if "series_tag" in cfg and "{n}" not in str(cfg["series_tag"]):
+        raise ConfigError(f"{channel_id}: series_tag '{{n}}' (bölüm numarası) içermeli")
 
 
 def load_channels() -> dict[str, dict[str, Any]]:
@@ -168,6 +174,25 @@ def get_titles(channel_id: str) -> list[str]:
     return list(entry.get("titles", []))[-MAX_TITLE_HISTORY:]
 
 
+def get_video_count(channel_id: str) -> int:
+    """Kanalda şimdiye kadar üretilen video sayısı (konu listesi 200'de kesildiği için ayrıca sayılır)."""
+    entry = load_history().get(channel_id, {})
+    return int(entry.get("count", len(entry.get("topics", []))))
+
+
+def get_learned(channel_id: str) -> dict[str, Any]:
+    """Haftalık geri bildirim betiğinin yazdığı en iyi/en kötü başlıklar; dosya yoksa ya da bozuksa boş döner."""
+    if not LEARNED_PATH.exists():
+        return {}
+    try:
+        data = _read_json(LEARNED_PATH)
+    except ConfigError as exc:
+        log.warning("learned.json okunamadı, yok sayılıyor: %s", exc)
+        return {}
+    entry = data.get(channel_id) if isinstance(data, dict) else None
+    return entry if isinstance(entry, dict) else {}
+
+
 def add_topic(channel_id: str, topic: str, theme: str | None = None, title: str | None = None) -> None:
     """Konuyu kanal geçmişine ekler; yalnızca son 200 konu saklanır."""
     topic = topic.strip()
@@ -175,6 +200,7 @@ def add_topic(channel_id: str, topic: str, theme: str | None = None, title: str 
         return
     history = load_history()
     entry = history.setdefault(channel_id, {"topics": []})
+    entry["count"] = int(entry.get("count", len(entry.get("topics", [])))) + 1
     entry.setdefault("topics", []).append(topic)
     if theme:
         entry["themes"] = (entry.get("themes", []) + [theme])[-MAX_THEME_HISTORY:]
