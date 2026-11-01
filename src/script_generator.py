@@ -23,8 +23,10 @@ log = logging.getLogger(__name__)
 MODEL_CHAIN = list(dict.fromkeys(
     [m for m in (
         os.environ.get("GEMINI_MODEL", "").strip(),
-        "gemini-3.6-flash", "gemini-3-flash-preview", "gemini-3.5-flash", "gemini-2.5-flash",
-        "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash", "gemini-3.7-flash",
+        "gemini-3.6-flash", "gemini-3-flash-preview", "gemini-3.5-flash",
+        # lite modelleri: ayrı kota havuzu, 5-9 sn'de yanıt verir (gemini-2.5-flash artık yeni kullanıcılara kapalı: 404)
+        "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest",
+        "gemini-flash-latest", "gemini-3.8-flash", "gemini-3.7-flash",
     ) if m]
 ))
 OVERLOAD_LIMIT = 2              # bir model bu kadar kez pes ettirirse (503/504) çalışmanın geri kalanında atlanır
@@ -429,6 +431,8 @@ def _finalize(
 def _classify_error(exc: Exception) -> tuple[str, float]:
     """Hatayı ('daily_quota' | 'rate_limit' | 'transient' | 'content', bekleme sn) olarak sınıflar."""
     text = str(exc)
+    if "404" in text and "NOT_FOUND" in text:   # model kaldırılmış ya da yeni kullanıcılara kapalı: tekrar denemenin anlamı yok
+        return "daily_quota", 0.0
     if "429" in text or "RESOURCE_EXHAUSTED" in text:
         if "PerDay" in text or "per day" in text.lower():
             return "daily_quota", 0.0
