@@ -51,8 +51,8 @@ def pick_music(channel_id: str) -> Path | None:
 
 def _sfx_plan(durations: list[float], style: dict, total: float) -> list[tuple[Path, float, float]]:
     """Kanca ses efektleri: (dosya, başlangıç sn, ses düzeyi). Dosya yoksa o efekt sessizce atlanır."""
+    # Açılıştaki whoosh kaldırıldı: kanca cümlesinin ilk kelimelerini bastırıp anlaşılmaz yapıyordu
     plan: list[tuple[Path, float, float]] = [
-        (SFX_DIR / "whoosh.mp3", 0.0, 0.55),        # açılışta kaydırmayı engelleyen hava akımı
         (SFX_DIR / "sub_drop.mp3", 2.5, 0.40),      # kanca cümlesinin sonunda hafif bas darbesi
     ]
     if style.get("glitch") and durations and durations[0] > 1.5:   # korku: 2. sahneye geçerken dijital bozulma

@@ -74,10 +74,10 @@ STYLES: dict[str, dict[str, Any]] = {
             "outline_w": 8, "shadow": 4, "box": False, "margin_v": 500, "anim": "pop", "chunk": 2, "highlight": "&H0000FF40",
         },
     },
-    # Korku: soğuk yeşil-mavi, titrek el kamerası, glitch, yoğun tanecik
+    # Korku: soğuk yeşil-mavi, glitch, yoğun tanecik (el kamerası titremesi ve parlaklık titreşimi kullanıcı isteğiyle kapatıldı)
     "horror": {
         "effects": ["zoom_in", "drift_up", "push_left", "zoom_in", "push_right"],
-        "zoom_max": 1.26, "hook_zoom": 1.36, "shake": 7.0, "glitch": True, "flicker": 0.06,
+        "zoom_max": 1.26, "hook_zoom": 1.36, "shake": 0.0, "glitch": True, "flicker": 0.0,
         "grade": "eq=contrast=1.22:saturation=0.45:brightness=-0.05:gamma=0.85,curves=g='0/0 0.5/0.54 1/1':r='0/0 0.5/0.44 1/1'",
         "vignette": 0.95, "grain": 8, "bloom": 0.0,
         "transitions": ["fadeblack", "pixelize", "hblur", "fadeblack", "distance", "fadegrays"],
