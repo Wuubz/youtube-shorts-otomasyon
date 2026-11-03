@@ -302,7 +302,7 @@ def _check_title_variety(title: str, recent: list[str]) -> None:
         union = keys | old_keys
         if union and len(keys & old_keys) / len(union) >= 0.6:
             raise ValueError(f"Başlık son bir başlığa çok benziyor: '{old}'")
-        if age < 12 and len(words) >= 4 and len(old_words) >= 4 and words[-4:] == old_words[-4:]:
+        if age < 8 and len(words) >= 4 and len(old_words) >= 4 and words[-4:] == old_words[-4:]:
             raise ValueError(f"Başlık, son başlıklardaki cümle bitişini tekrarlıyor: '{old}'")
         if age < 3 and len(words) >= 3 and words[:3] == old_words[:3]:
             raise ValueError(f"Başlık art arda aynı açılışla başlıyor: '{old}'")
@@ -417,7 +417,8 @@ def _ensure_closing_question(final_scenes: list[dict[str, str]], question: str) 
 
 
 def _finalize(
-    raw: VideoScript, channel: dict[str, Any], past_topics: list[str], direction: dict[str, str] | None = None
+    raw: VideoScript, channel: dict[str, Any], past_topics: list[str], direction: dict[str, str] | None = None,
+    strict_titles: bool = True,
 ) -> dict[str, Any]:
     topic = _clean(raw.topic_summary)[:200]
     if not topic:
@@ -465,8 +466,14 @@ def _finalize(
         raise ValueError(f"Toplam kelime sayısı {total_words}; {min_words}-{max_words} aralığı dışında")
 
     title = _finalize_title(raw.title)
-    _check_title_variety(title, get_titles(channel["id"]))
-    _check_famous_title(title, channel)
+    try:
+        _check_title_variety(title, get_titles(channel["id"]))
+        _check_famous_title(title, channel)
+    except ValueError as exc:
+        if strict_titles:
+            raise
+        # Başlık kalitesi kontrolü yüzünden kanal video kaçırmamalı: istek bütçesi yarılanınca uyarıyla kabul edilir
+        log.warning("[%s] Başlık kontrolü gevşetildi, başlık kabul edildi: %s", channel["id"], exc)
 
     _add_series_and_follow(final_scenes, channel)
     return {
@@ -528,7 +535,10 @@ def generate_script(channel: dict[str, Any], past_topics: list[str]) -> dict[str
                 response = client.models.generate_content(model=model, contents=prompt, config=config)
                 if not response.text:
                     raise RuntimeError("Gemini boş yanıt döndürdü (içerik filtrelenmiş olabilir)")
-                script = _finalize(VideoScript.model_validate_json(response.text), channel, past_topics, direction)
+                script = _finalize(
+                    VideoScript.model_validate_json(response.text), channel, past_topics, direction,
+                    strict_titles=requests_made <= MAX_REQUESTS // 2,
+                )
                 log.info(
                     "[%s] Senaryo hazır: '%s' (%d sahne, %s)",
                     channel["id"], script["title"], len(script["scenes"]), model,
