@@ -405,7 +405,8 @@
       "A vintage porcelain doll that whispers the name of the owner's next guest before they arrive.",
       "Blackwood Sanatorium: An abandoned sanatorium lightbox displays a fresh X-ray scan of a trespasser's own lungs.",
       "Service elevator horror: an apartment building resident gets trapped in an ascending service lift with an extra pair of boots.",
-      "Brass wall intercom: an antique device in a dusty room predicts knocking and whispers seconds before they occur."
+      "Brass wall intercom: an antique device in a dusty room predicts knocking and whispers seconds before they occur.",
+      "Cabin compass: A hiker's brass compass stops pointing north inside a rainy woods shelter, tracking a watcher behind him."
     ],
     "themes": [
       "Sleep paralysis and nightmare creatures",
@@ -430,7 +431,8 @@
       "Creepy dolls, toys and children's drawings",
       "Abandoned hospitals, schools and other forgotten places",
       "Hotel, elevator and apartment building horror",
-      "Sounds in the dark: knocking, whispers and footsteps"
+      "Sounds in the dark: knocking, whispers and footsteps",
+      "Forest, camping and wilderness horror"
     ],
     "titles": [
       "There Was Someone Inside My Walls #Shorts",
@@ -460,9 +462,10 @@
       "Do Not Answer If The Porcelain Doll Whispers #Shorts",
       "The Sanatorium Lightbox That Showed My Ribs #Shorts",
       "There Was Someone Inside The Service Lift #Shorts",
-      "I Found A Brass Intercom In My Attic #Shorts"
+      "I Found A Brass Intercom In My Attic #Shorts",
+      "The Cabin Compass That Pointed Behind Me #Shorts"
     ],
-    "count": 29
+    "count": 30
   },
   "ch6_universal_stories": {
     "topics": [
