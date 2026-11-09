@@ -474,9 +474,8 @@
       "renderer": "remotion",
       "story_bible": true,
       "scene_types": [
-        "evidence_document",
-        "dramatic_focus",
-        "mind_scan"
+        "mind_scan",
+        "dramatic_focus"
       ],
       "badges": [
         "skull",
@@ -564,8 +563,7 @@
       "renderer": "remotion",
       "story_bible": true,
       "scene_types": [
-        "dramatic_focus",
-        "evidence_document"
+        "dramatic_focus"
       ],
       "badges": [
         "broken_heart",
