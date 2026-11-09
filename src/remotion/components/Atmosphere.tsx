@@ -8,12 +8,6 @@ const H = 1920;
 // Not: renk tonu ve vinyet Python tarafında görsele bir kez işlenir (remotion_bridge._bake_look). Burada yalnızca
 // ucuz çizilen katmanlar var: karışım modu (blend) ve büyük blur kullanılmaz, çünkü CPU render süresini katlar.
 
-// Küçük bir SVG gürültü karosu: bir kez çizilir, her karede konumu kaydırılarak film tanesi taklit edilir.
-const GRAIN_TILE =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'>" +
-  "<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/>" +
-  "<feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")";
-
 const Particles: React.FC<{theme: Theme; seed: number}> = ({theme, seed}) => {
   const frame = useCurrentFrame();
   const cfg = theme.particles;
@@ -109,16 +103,6 @@ export const Atmosphere: React.FC<{theme: Theme; seed: number}> = ({theme, seed}
         />
       ) : null}
       {theme.dust ? <Dust seed={seed} /> : null}
-      {theme.grain > 0 ? (
-        <AbsoluteFill
-          style={{
-            backgroundImage: GRAIN_TILE,
-            backgroundSize: '256px 256px',
-            backgroundPosition: `${Math.floor(random(`gx${frame}`) * 256)}px ${Math.floor(random(`gy${frame}`) * 256)}px`,
-            opacity: theme.grain * 0.012,
-          }}
-        />
-      ) : null}
       {theme.filmFrame ? (
         <AbsoluteFill
           style={{

@@ -233,13 +233,15 @@ def _audio_graph(
 
 def _mux_audio(
     silent_video: Path, audio: AudioResult, music: Path | None, total: float, output: Path, style: dict,
+    sfx: list[tuple[Path, float, float]] | None = None,
 ) -> None:
     """Remotion'un sessiz videosuna sesi ekler. Remotion JPEG kareler yüzünden tam aralıklı (yuvj420p) çıktı verdiği için
     görüntü standart limited-range yuv420p'ye çevrilerek yeniden kodlanır (eski FFmpeg yoluyla aynı biçim)."""
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(silent_video.resolve()), "-i", str(audio.audio_path.resolve())]
     if music:
         cmd += ["-stream_loop", "-1", "-i", str(music.resolve())]
-    sfx = _sfx_plan(audio.durations, style, total)
+    if sfx is None:
+        sfx = _sfx_plan(audio.durations, style, total)
     sfx_base = 2 + (1 if music else 0)
     for path, _, _ in sfx:
         cmd += ["-i", str(path.resolve())]
@@ -312,8 +314,8 @@ def _render_with_remotion(
     images: list[Path], audio: AudioResult, music: Path | None, total: float, output: Path, work_dir: Path, style: dict,
 ) -> None:
     effects = _effect_sequence(style["effects"], len(images))
-    silent, _ = render_silent_video(images, audio, style, effects, work_dir)
-    _mux_audio(silent, audio, music, total, output, style)
+    silent, _, sfx = render_silent_video(images, audio, style, effects, work_dir)
+    _mux_audio(silent, audio, music, total, output, style, sfx)
 
 
 def _render_with_ffmpeg(

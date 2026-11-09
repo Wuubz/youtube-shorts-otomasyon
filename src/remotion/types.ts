@@ -18,10 +18,23 @@ export type Cue = {
 
 export type Label = {start: number; end: number; text: string};
 
+export type SceneType = 'evidence_document' | 'radar_hud' | 'mind_scan' | 'ancient_scroll' | 'dramatic_focus';
+export type BadgeType = 'warning' | 'skull' | 'galaxy' | 'stoic_pillar' | 'broken_heart' | 'none';
+
+export type SceneWord = {t: string; s: number; e: number};
+
 export type SceneSpec = {
   image: string; // public klasörüne göre dosya adı
   start: number; // başlangıç karesi
   frames: number; // sahnenin kendi süresi (kare)
+  type: SceneType; // Gemini'nin seçtiği hareketli grafik katmanı
+  impact: number; // animasyonun ekrana çarptığı kare (sahne başından); ses efekti aynı anda patlar
+  badge: BadgeType;
+  keyPhrase: string; // ekranda vurulacak şok ifade (boşsa yok)
+  keyStart: number | null; // ifadenin söylendiği an (sn, videonun başından)
+  keyEnd: number | null;
+  words: SceneWord[]; // kanıt belgesinde altı çizilecek kelimeler (yalnızca evidence_document)
+  sfx: string;
 };
 
 export type ShortsProps = {

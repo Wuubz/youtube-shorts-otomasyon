@@ -15,6 +15,9 @@ from pydantic import BaseModel, Field
 from src.config_loader import (
     MAX_HISTORY_TOPICS, get_gemini_api_key, get_learned, get_themes, get_titles, get_video_count,
 )
+from src.visuals import (
+    BADGES, DEFAULT_SCENE_TYPE, DEFAULT_SFX_FOR_TYPE, MAX_BADGES_PER_VIDEO, NO_BADGE, SCENE_TYPES, SFX_CUES,
+)
 
 log = logging.getLogger(__name__)
 
@@ -92,6 +95,10 @@ class Scene(BaseModel):
     characters_present: list[str] = Field(default_factory=list, description="Exact names from `characters` visible in this scene")
     show_setting: bool = Field(default=False, description="True if the main setting is visible in this scene")
     label: str = Field(default="", description="1-4 word on-screen time/place caption when the time or place changes, else empty")
+    scene_type: str = Field(default="", description="Motion-graphics layer for this scene: one of the allowed scene types")
+    key_phrase: str = Field(default="", description="2-3 consecutive words copied EXACTLY from this scene's narration: the shock concept")
+    sfx_cue: str = Field(default="", description="Sound effect fired when the scene's graphic lands: slam, marker_scratch, heartbeat, glitch, camera_shutter or deep_boom")
+    floating_badge: str = Field(default="none", description="Icon floating on screen: warning, skull, galaxy, stoic_pillar, broken_heart or none")
 
 
 class VideoScript(BaseModel):
@@ -173,6 +180,45 @@ def _direction_block(direction: dict[str, str], channel: dict[str, Any]) -> str:
             "atmosphere while staying consistent with the subject of its scene."
         )
     return "\n".join(lines) + "\n\n"
+
+
+SCENE_TYPE_HELP = {
+    "evidence_document": "a classified file / newspaper clipping slams onto a desk and the narrated sentence is underlined with a marker as it is spoken (use for facts, records, claims, proof)",
+    "radar_hud": "a sci-fi radar / coordinates interface locks onto a target (use for detection, distance, scale, searching, tracking)",
+    "mind_scan": "a neural-network / brain X-ray scan lights up (use for thoughts, emotions, manipulation, memory, behaviour)",
+    "ancient_scroll": "an ancient parchment unrolls and a wax seal is stamped on it (use for myths, prophecy, oaths, old secrets, rules)",
+    "dramatic_focus": "cinematic letterbox with a camera focus snapping onto the image (use for the hook, emotional peaks and the final question)",
+}
+BADGE_HELP = {
+    "warning": "danger, a threat, a red flag",
+    "skull": "death, doom, a deadly secret",
+    "galaxy": "space, scale, the unknown cosmos",
+    "stoic_pillar": "discipline, stoicism, strength, ancient wisdom",
+    "broken_heart": "betrayal, loss, heartbreak, sacrifice",
+}
+
+
+def _allowed(channel: dict[str, Any], key: str, universe: tuple[str, ...]) -> list[str]:
+    configured = [v for v in (channel.get(key) or []) if v in universe]
+    return configured or list(universe)
+
+
+def _visual_block(channel: dict[str, Any]) -> str:
+    """Gemini'ye her sahne için Remotion'un çizeceği hareketli grafik katmanını seçtirir (görsel yönetmen)."""
+    types = _allowed(channel, "scene_types", SCENE_TYPES)
+    badges = _allowed(channel, "badges", BADGES)
+    type_lines = "\n".join(f"  * {t}: {SCENE_TYPE_HELP[t]}" for t in types)
+    badge_lines = "\n".join(f"  * {b}: {BADGE_HELP[b]}" for b in badges)
+    return f"""
+VISUAL DIRECTION (you are also the film director: the video is a motion essay, not a slideshow). For EVERY scene choose:
+- scene_type, one of the layers below. Pick the one that best proves what the narration says; do not use the same type in two consecutive scenes. Scene 1 and the last scene should be dramatic_focus when it is allowed.
+{type_lines}
+- key_phrase: the 2 or 3 consecutive words of THIS scene's narration that carry the shock (a number, a forbidden concept, the twist). Copy them EXACTLY as written in the narration, in the same order. They are slammed on screen with a screen shake at the moment they are spoken, so choose the sharpest words, not filler.
+- sfx_cue: the sound that fires when the scene's graphic lands. One of: slam (heavy impact, files and facts), marker_scratch (underlining a claim), heartbeat (fear, tension, emotion), glitch (anomaly, corruption, digital), camera_shutter (evidence captured, a revealing moment), deep_boom (a huge reveal, doom). Vary them; use deep_boom at most once.
+- floating_badge: a glowing icon floating over the scene; use it on at most {MAX_BADGES_PER_VIDEO} scenes (the strongest emotional beats), otherwise "none". Allowed icons:
+{badge_lines}
+  * none: no icon
+"""
 
 
 POPULAR_CANDIDATES = 10
@@ -259,7 +305,8 @@ IMAGE PROMPT RULES (one per scene, matching that scene's narration):
 - The last image should visually echo the closing question (a door left open, two paths, an unanswered choice).
 - Vertical 9:16 composition. Absolutely NO text, letters, numbers, captions, logos or watermarks in the image.
 - Keep one consistent visual style across all scenes of the video.
-
+- Motion graphics (documents, radar, scans, scrolls, icons) are drawn OVER the image and the image is darkened, so the image is the atmosphere behind them: a strong, moody, readable scene, not a busy collage.
+{_visual_block(channel)}
 SEO RULES:
 - topic_summary: one short sentence (max 120 characters) that STARTS with the central subject (for example "Voyager 1: ...") so repeats can be detected later.
 - title: curiosity-gap English title, at most 55 characters (the tag " #Shorts" is appended afterwards). Concrete and specific; no vague superlatives like "The Darkest ..." with no subject, and no vague "Why did this ...?" questions. The title must truthfully match the story the video actually tells.
@@ -380,6 +427,69 @@ def _trim(text: str, limit: int) -> str:
     return text
 
 
+def _bare_word(word: str) -> str:
+    return re.sub(r"[^a-z0-9']+", "", word.lower())
+
+
+def _strip_edges(word: str) -> str:
+    return re.sub(r"^[^\w]+|[^\w]+$", "", word)
+
+
+def _find_key_phrase(narration: str, phrase: str) -> str:
+    """Anahtar ifadenin anlatım metninde ardışık kelimeler olarak geçtiğini doğrular. Bulunamazsa en güçlü tek kelimeyi seçer
+    (rakam, yoksa en uzun anlamlı kelime): ifade ekranda, o kelime söylenirken vurulur."""
+    words = [w for w in narration.split() if w]
+    bare = [_bare_word(w) for w in words]
+    target = [_bare_word(w) for w in phrase.split() if _bare_word(w)][:4]
+    n = len(target)
+    if n:
+        for i in range(len(bare) - n + 1):
+            if bare[i:i + n] == target:
+                return " ".join(_strip_edges(w) for w in words[i:i + n])
+    candidates = [w for w in words if _bare_word(w) and _bare_word(w) not in _TITLE_STOPWORDS]
+    digits = [w for w in candidates if any(c.isdigit() for c in w)]
+    if digits:
+        return _strip_edges(digits[0])
+    return _strip_edges(max(candidates, key=lambda w: len(_bare_word(w)))) if candidates else ""
+
+
+def _resolve_visuals(
+    scene: Scene, narration: str, index: int, count: int, channel: dict[str, Any], state: dict[str, Any],
+) -> dict[str, Any]:
+    """Gemini'nin görsel yönetmen alanlarını doğrular ve düzeltir. Geçersiz değer videoyu düşürmez; kanal için geçerli
+    varsayılana çekilir (istek bütçesi boşa harcanmasın)."""
+    types = _allowed(channel, "scene_types", SCENE_TYPES)
+    badges = _allowed(channel, "badges", BADGES)
+
+    scene_type = _clean(scene.scene_type).lower().replace(" ", "_")
+    if scene_type not in types:
+        scene_type = types[index % len(types)]
+    if index in (0, count - 1) and DEFAULT_SCENE_TYPE in types:     # kanca ve kapanış: görselin kendisi öne çıkar
+        scene_type = DEFAULT_SCENE_TYPE
+    elif scene_type == state.get("prev_type") and len(types) > 1:   # art arda aynı katman yok
+        scene_type = types[(types.index(scene_type) + 1) % len(types)]
+    state["prev_type"] = scene_type
+
+    cue = _clean(scene.sfx_cue).lower().replace(" ", "_").replace("-", "_")
+    if cue not in SFX_CUES or (cue == "deep_boom" and state.get("boom_used")):
+        cue = DEFAULT_SFX_FOR_TYPE[scene_type]
+    if cue == "deep_boom":
+        state["boom_used"] = True
+
+    badge = _clean(scene.floating_badge).lower().replace(" ", "_")
+    if badge not in badges or state.get("badges_used", 0) >= MAX_BADGES_PER_VIDEO:
+        badge = NO_BADGE
+    if badge != NO_BADGE:
+        state["badges_used"] = state.get("badges_used", 0) + 1
+
+    return {
+        "scene_type": scene_type,
+        "key_phrase": _find_key_phrase(narration, scene.key_phrase),
+        "sfx_cue": cue,
+        "floating_badge": badge,
+    }
+
+
 def _finalize_image_prompt(prompt: str, style: str, identity: list[str] | None = None, setting: str = "") -> str:
     """Sabit karakter/mekan tarifleri en başa konur (görsel modeller baştaki kelimeleri daha çok dikkate alır)."""
     base = _clean(prompt).rstrip(".,; ")
@@ -434,6 +544,7 @@ def _finalize(
     setting = _trim(raw.setting, MAX_IDENTITY_CHARS) if raw.setting else ""
     base_seed = random.randint(1, 2_147_483_647)   # aynı hikayedeki karakterli sahneler aynı tohumla başlar
     labels_used = 0
+    visual_state: dict[str, Any] = {}
 
     final_scenes: list[dict[str, Any]] = []
     for index, scene in enumerate(scenes):
@@ -453,6 +564,7 @@ def _finalize(
                 scene.image_prompt, channel["visual_style_prompt"], identity, used_setting
             ),
             "label": label,
+            **_resolve_visuals(scene, narration, index, len(scenes), channel, visual_state),
         }
         if identity or used_setting:
             entry["seed"] = base_seed

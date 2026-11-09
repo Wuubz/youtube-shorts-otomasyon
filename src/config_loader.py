@@ -11,6 +11,8 @@ from typing import Any
 
 from dotenv import load_dotenv
 
+from src.visuals import BADGES, SCENE_TYPES
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT_DIR / "config" / "channels.json"
 HISTORY_PATH = ROOT_DIR / "data" / "history.json"
@@ -41,7 +43,7 @@ REQUIRED_CHANNEL_FIELDS = (
 # Çeşitlilik için isteğe bağlı listeler: her videoda bunlardan rastgele biri seçilir
 OPTIONAL_STRING_LISTS = (
     "sub_themes", "hook_styles", "visual_moods", "title_formulas", "proven_examples", "weak_examples",
-    "popular_subjects", "follow_lines",
+    "popular_subjects", "follow_lines", "scene_types", "badges",
 )
 VALID_SCHEDULE_MODES = ("scheduled", "immediate")
 VALID_LENGTH_PROFILES = ("standard", "short")
@@ -110,6 +112,10 @@ def _validate_channel(channel_id: str, cfg: dict[str, Any]) -> None:
             raise ConfigError(f"{channel_id}: {key} boş olmayan metinlerden oluşan bir liste olmalı")
     if cfg.get("length_profile", "standard") not in VALID_LENGTH_PROFILES:
         raise ConfigError(f"{channel_id}: length_profile {VALID_LENGTH_PROFILES} değerlerinden biri olmalı")
+    for key, allowed in (("scene_types", SCENE_TYPES), ("badges", BADGES)):
+        unknown = [v for v in cfg.get(key, []) if v not in allowed]
+        if unknown:
+            raise ConfigError(f"{channel_id}: {key} içinde geçersiz değer {unknown}; izin verilenler: {allowed}")
     if cfg.get("renderer", "remotion") not in VALID_RENDERERS:
         raise ConfigError(f"{channel_id}: renderer {VALID_RENDERERS} değerlerinden biri olmalı")
     if "series_tag" in cfg and "{n}" not in str(cfg["series_tag"]):

@@ -6,12 +6,17 @@ import json
 import logging
 import os
 import random
+import re
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
 
-from src.audio_subtitle import AudioResult, _ass_escape, _is_emphasis, _karaoke_slices, probe_duration
+from src.audio_subtitle import AudioResult, _ass_escape, _is_emphasis, _karaoke_slices, _spread, probe_duration
+from src.visuals import (
+    BADGES, DEFAULT_SCENE_TYPE, DEFAULT_SFX_FOR_TYPE, EXTRA_LEVEL, FIRST_SCENE_SFX_FACTOR, NO_BADGE, SCENE_TYPES,
+    SFX_DIR, SFX_FILES, SFX_CUES, SFX_LEVEL, impact_seconds,
+)
 
 log = logging.getLogger(__name__)
 
@@ -69,8 +74,10 @@ def _build_cues(audio: AudioResult) -> list[dict[str, Any]]:
         tokens = _ass_escape(text).split()
         slices = _karaoke_slices(cue, len(tokens))
         highlight = len(slices) == len(tokens)
-        if not highlight:                         # zamanlar uyuşmuyorsa kelimeler bloğun tamamı boyunca aynı kalır
-            slices = [(start, end)] * len(tokens)
+        if not highlight:
+            # edge-tts bazen bir blok için kelime başına zaman vermez (ör. rakamlar): kelimeler blok süresine harf
+            # sayısıyla orantılı dağıtılır; böylece anahtar ifade ve altı çizilen kelimeler yine yaklaşık anda vurur
+            slices = [(s, e) for s, e, _ in _spread(tokens, start, end)]
         words = [
             {"t": token, "s": round(s, 3), "e": round(e, 3), "emph": _is_emphasis(token)}
             for token, (s, e) in zip(tokens, slices)
@@ -80,17 +87,87 @@ def _build_cues(audio: AudioResult) -> list[dict[str, Any]]:
     return cues
 
 
-def _scene_specs(audio: AudioResult, names: list[str], min_frames: int = FPS) -> list[dict[str, Any]]:
-    """Sahne başlangıçları ses sürelerinin kümülatif toplamından hesaplanır; yuvarlama kayması birikmez."""
+def _scene_words(cues: list[dict[str, Any]], start_s: float, end_s: float) -> list[dict[str, Any]]:
+    """Sahnenin süresi içinde okunan kelimeler (kanıt belgesi ve anahtar ifade eşleşmesi için)."""
+    out: list[dict[str, Any]] = []
+    for cue in cues:
+        for word in cue["words"]:
+            if start_s - 0.02 <= word["s"] < end_s - 0.02:
+                out.append({"t": word["t"], "s": word["s"], "e": word["e"]})
+    return out
+
+
+def _bare(word: str) -> str:
+    return re.sub(r"[^a-z0-9']+", "", word.lower())
+
+
+def _find_phrase_times(words: list[dict[str, Any]], phrase: str) -> tuple[float, float] | None:
+    """Anahtar ifadenin söylendiği (başlangıç, bitiş) saniyesi; bulunamazsa None."""
+    target = [_bare(w) for w in phrase.split() if _bare(w)]
+    bare = [_bare(w["t"]) for w in words]
+    n = len(target)
+    if not n:
+        return None
+    for i in range(len(bare) - n + 1):
+        if bare[i:i + n] == target:
+            return words[i]["s"], words[i + n - 1]["e"]
+    return None
+
+
+def _scene_specs(
+    audio: AudioResult, names: list[str], cues: list[dict[str, Any]], min_frames: int = FPS,
+) -> list[dict[str, Any]]:
+    """Sahne başlangıçları ses sürelerinin kümülatif toplamından hesaplanır; yuvarlama kayması birikmez.
+    Her sahneye görsel yönetmen alanları (tür, anahtar ifade zamanı, rozet) ve animasyonun çarpma karesi eklenir."""
     specs: list[dict[str, Any]] = []
     cumulative = 0.0
     start = 0
     for index, (name, duration) in enumerate(zip(names, audio.durations)):
         cumulative += duration
         end = max(int(round(cumulative * FPS)), start + min_frames)
-        specs.append({"image": name, "start": start, "frames": end - start})
+        meta = audio.scenes[index] if index < len(audio.scenes) else {}
+        scene_type = meta.get("scene_type") if meta.get("scene_type") in SCENE_TYPES else DEFAULT_SCENE_TYPE
+        frames = end - start
+        impact = int(round(impact_seconds(scene_type, index) * FPS))
+        impact = max(6, min(impact, max(frames - 12, 6)))           # kısa sahnede de sahne bitmeden çarpsın
+        start_s, end_s = start / FPS, end / FPS
+        words = _scene_words(cues, start_s, end_s)
+        key_phrase = str(meta.get("key_phrase") or "").strip()
+        times = _find_phrase_times(words, key_phrase) if key_phrase else None
+        badge = meta.get("floating_badge") if meta.get("floating_badge") in BADGES else NO_BADGE
+        specs.append({
+            "image": name, "start": start, "frames": frames,
+            "type": scene_type, "impact": impact, "badge": badge,
+            "keyPhrase": key_phrase,
+            "keyStart": round(times[0], 3) if times else None,
+            "keyEnd": round(times[1], 3) if times else None,
+            "words": words if scene_type == "evidence_document" else [],
+            "sfx": meta.get("sfx_cue") if meta.get("sfx_cue") in SFX_CUES else DEFAULT_SFX_FOR_TYPE[scene_type],
+        })
         start = end
     return specs
+
+
+def plan_sfx(scenes: list[dict[str, Any]], total_seconds: float) -> list[tuple[Path, float, float]]:
+    """Her sahnenin sfx_cue sesini animasyonun ekrana çarptığı ana (sahne başı + impact karesi) yerleştirir.
+    Kanıt belgelerinde ek olarak daktilo tıkları ve kalemin çizmeye başladığı an için fosforlu kalem sesi eklenir."""
+    plan: list[tuple[Path, float, float]] = []
+
+    def add(name: str, at: float, level: float) -> None:
+        path = SFX_DIR / name
+        if path.is_file() and 0 <= at < total_seconds - 0.4:
+            plan.append((path, at, level))
+
+    for index, scene in enumerate(scenes):
+        factor = FIRST_SCENE_SFX_FACTOR if index == 0 else 1.0
+        at = scene["start"] / FPS + scene["impact"] / FPS
+        cue = scene["sfx"]
+        add(SFX_FILES[cue], at, SFX_LEVEL[cue] * factor)
+        if scene["type"] == "evidence_document":
+            add("typewriter.mp3", at + 0.3, EXTRA_LEVEL["typewriter"] * factor)
+            if scene["words"] and cue != "marker_scratch":
+                add("marker.mp3", scene["words"][0]["s"] + 0.1, EXTRA_LEVEL["marker"] * factor)
+    return plan
 
 
 def _pick_transitions(style: dict[str, Any], count: int) -> list[str]:
@@ -105,7 +182,8 @@ def _pick_transitions(style: dict[str, Any], count: int) -> list[str]:
 def build_props(
     audio: AudioResult, style: dict[str, Any], names: list[str], effects: list[str],
 ) -> dict[str, Any]:
-    scenes = _scene_specs(audio, names)
+    cues = _build_cues(audio)
+    scenes = _scene_specs(audio, names, cues)
     total_frames = min(scenes[-1]["start"] + scenes[-1]["frames"], int(SAFE_VIDEO_SECONDS * FPS))
     return {
         "channel_theme": style["name"],
@@ -117,7 +195,7 @@ def build_props(
         "xfadeFrames": int(style["xfade_frames"]),
         "zoomMax": float(style["zoom_max"]),
         "hookZoom": float(style["hook_zoom"]),
-        "cues": _build_cues(audio),
+        "cues": cues,
         "labels": [
             {"start": round(s, 3), "end": round(e, 3), "text": _ass_escape(text)} for s, e, text in audio.labels
         ],
@@ -128,8 +206,8 @@ def build_props(
 
 def render_silent_video(
     images: list[Path], audio: AudioResult, style: dict[str, Any], effects: list[str], work_dir: Path,
-) -> tuple[Path, int]:
-    """Remotion ile sessiz MP4 üretir; (dosya yolu, kare sayısı) döndürür. Hata durumunda RemotionError fırlatır."""
+) -> tuple[Path, int, list[tuple[Path, float, float]]]:
+    """Remotion ile sessiz MP4 üretir; (dosya yolu, kare sayısı, ses efekti planı) döndürür. Hata: RemotionError."""
     if not remotion_available():
         raise RemotionError("Node.js veya npm bağımlılıkları (npm ci) bulunamadı")
 
@@ -178,4 +256,4 @@ def render_silent_video(
         raise RemotionError(f"Remotion çıktısının süresi beklenenden farklı ({seconds:.1f} sn, beklenen {expected:.1f} sn)")
     size_mb = output.stat().st_size / 1_000_000
     log.info("Remotion render tamam: %.1f sn, %.1f MB", seconds, size_mb)
-    return output, props["totalFrames"]
+    return output, props["totalFrames"], plan_sfx(props["scenes"], props["totalFrames"] / FPS)

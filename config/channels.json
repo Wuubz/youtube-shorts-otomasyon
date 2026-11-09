@@ -77,7 +77,16 @@
         "Follow for a new cosmic mystery daily.",
         "Follow. The universe gets stranger tomorrow."
       ],
-      "renderer": "remotion"
+      "renderer": "remotion",
+      "scene_types": [
+        "radar_hud",
+        "dramatic_focus",
+        "evidence_document"
+      ],
+      "badges": [
+        "galaxy",
+        "warning"
+      ]
     },
     "ch2_dark_history": {
       "enabled": true,
@@ -157,7 +166,16 @@
         "Follow for more forgotten history.",
         "Follow. History has more secrets."
       ],
-      "renderer": "remotion"
+      "renderer": "remotion",
+      "scene_types": [
+        "evidence_document",
+        "ancient_scroll",
+        "dramatic_focus"
+      ],
+      "badges": [
+        "skull",
+        "warning"
+      ]
     },
     "ch3_dark_psychology": {
       "enabled": true,
@@ -234,7 +252,17 @@
         "Follow for a new mind rule daily.",
         "Follow. Tomorrow's rule is darker."
       ],
-      "renderer": "remotion"
+      "renderer": "remotion",
+      "scene_types": [
+        "mind_scan",
+        "evidence_document",
+        "dramatic_focus"
+      ],
+      "badges": [
+        "warning",
+        "stoic_pillar",
+        "broken_heart"
+      ]
     },
     "ch4_epic_mythology": {
       "enabled": true,
@@ -357,7 +385,16 @@
         "Follow for more forbidden myths.",
         "Follow. The gods have more secrets."
       ],
-      "renderer": "remotion"
+      "renderer": "remotion",
+      "scene_types": [
+        "ancient_scroll",
+        "dramatic_focus"
+      ],
+      "badges": [
+        "stoic_pillar",
+        "skull",
+        "broken_heart"
+      ]
     },
     "ch5_midnight_horror": {
       "enabled": true,
@@ -433,7 +470,16 @@
         "Follow if you dare.",
         "Follow. Never look behind."
       ],
-      "renderer": "remotion"
+      "renderer": "remotion",
+      "scene_types": [
+        "evidence_document",
+        "dramatic_focus",
+        "mind_scan"
+      ],
+      "badges": [
+        "skull",
+        "warning"
+      ]
     },
     "ch6_universal_stories": {
       "enabled": true,
@@ -513,7 +559,15 @@
         "Follow for more heartwarming stories.",
         "Follow. Tomorrow's story will melt you."
       ],
-      "renderer": "remotion"
+      "renderer": "remotion",
+      "scene_types": [
+        "dramatic_focus",
+        "evidence_document"
+      ],
+      "badges": [
+        "broken_heart",
+        "warning"
+      ]
     }
   }
 }
