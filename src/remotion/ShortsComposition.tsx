@@ -5,7 +5,6 @@ import {CinematicVignette} from './components/CinematicVignette';
 import {DynamicFocalBadge} from './components/DynamicFocalBadge';
 import {InfoCard} from './components/InfoCard';
 import {KineticTypography} from './components/KineticTypography';
-import {ProgressBar} from './components/ProgressBar';
 import {SceneLayer} from './components/SceneLayer';
 import {SceneOverlay} from './components/SceneOverlay';
 import {SubscribeCTA} from './components/SubscribeCTA';
@@ -46,7 +45,6 @@ export const ShortsComposition: React.FC<ShortsProps> = (props) => {
         ))}
       </AbsoluteFill>
 
-      <ProgressBar color={theme.progress} />
       <InfoCard labels={props.labels} theme={theme} />
       <KineticTypography cues={props.cues} scenes={scenes} theme={theme} />
       <SubscribeCTA theme={theme} text={props.ctaText} />

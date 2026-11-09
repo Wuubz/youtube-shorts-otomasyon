@@ -18,7 +18,7 @@
       "env_prefix": "YT_CH1",
       "display_name": "Space Paradox",
       "youtube_channel_id": "UCjQrXuLJDdGtwyTXLph5SqQ",
-      "visual_style_prompt": "cinematic space photography, ultra detailed nebulae and planets, dramatic volumetric lighting, deep blue and violet palette, photorealistic, 8k, IMAX quality",
+      "visual_style_prompt": "cinematic science visualization, photorealistic, dramatic volumetric lighting, ultra detailed, vivid scale and depth, 8k, IMAX quality",
       "sub_themes": [
         "Black holes and their strange physics",
         "What if a planet or a star suddenly vanished",
@@ -106,7 +106,7 @@
       "env_prefix": "YT_CH2",
       "display_name": "Forgotten Echoes",
       "youtube_channel_id": "UCnbTY6Er-VVAJFCG2uJG4Qg",
-      "visual_style_prompt": "dark cinematic historical painting style, ancient ruins, torchlit atmosphere, moody chiaroscuro lighting, desaturated earthy tones, ultra detailed, 8k",
+      "visual_style_prompt": "dark cinematic historical realism, period-accurate clothing and architecture, moody chiaroscuro lighting, desaturated earthy tones, ultra detailed, 8k",
       "sub_themes": [
         "Lost civilizations that vanished without a clear explanation",
         "Ancient engineering mysteries such as the pyramids, the Antikythera mechanism and Gobekli Tepe",
@@ -135,12 +135,12 @@
         "Open with the last known moment before everything vanished, as if narrating a cold case file"
       ],
       "visual_moods": [
-        "torchlit stone chambers with flickering amber shadows",
-        "foggy dawn over desolate ruins in muted grey-green tones",
-        "sepia-toned aged parchment and oil painting texture",
-        "stormy seas and dark skies with dramatic lightning",
-        "dusty golden desert light over crumbling monuments",
-        "candlelit medieval interiors with deep red and brown tones"
+        "warm amber candlelight with deep brown shadows",
+        "desaturated grey-green dawn light",
+        "sepia tones with aged-parchment texture",
+        "cold steel-blue storm light with sharp highlights",
+        "dusty golden hour light with long shadows",
+        "deep crimson and black low-key lighting"
       ],
       "style": "chronicle",
       "title_formulas": [
@@ -195,7 +195,7 @@
       "env_prefix": "YT_CH3",
       "display_name": "Psych Decoded",
       "youtube_channel_id": "UCe-SbfHrS1TQyuOzrKgWdXA",
-      "visual_style_prompt": "dark moody cinematic portrait, film noir lighting, deep shadows, high contrast, minimalist surreal composition, dramatic rim light, 8k",
+      "visual_style_prompt": "dark moody cinematic photography, realistic scene, film noir lighting, deep shadows, high contrast, dramatic rim light, 8k",
       "sub_themes": [
         "Manipulation tactics and how to recognize them",
         "Body language and micro-expressions",
@@ -224,12 +224,12 @@
         "Open with a short Stoic line, then a direct challenge aimed at the viewer personally"
       ],
       "visual_moods": [
-        "lone silhouette in a rain-soaked neon-lit street",
-        "stark chess pieces and shadows in a dim study",
-        "foggy mountain road at dawn in monochrome blue",
-        "split-lit face half in shadow, half in cold light",
-        "ancient marble busts under dramatic spotlight",
-        "empty glass corridor with long reflections and cold teal tones"
+        "cold teal and steel-blue color grade with deep blacks",
+        "warm amber key light against dark shadows",
+        "desaturated monochrome with a single red accent",
+        "split lighting, half warm orange and half cold blue",
+        "green-tinted surveillance-camera look with harsh contrast",
+        "soft pale daylight with heavy vignette and muted colors"
       ],
       "style": "noir",
       "title_formulas": [
@@ -319,7 +319,7 @@
       "env_prefix": "YT_CH4",
       "display_name": "Mythic Realms",
       "youtube_channel_id": "UCndpB1eXGuyofzLP_at1hyQ",
-      "visual_style_prompt": "epic fantasy concept art, mythological gods and heroes, golden dramatic lighting, grand scale, highly detailed oil painting style, 8k",
+      "visual_style_prompt": "epic mythological concept art, grand scale, highly detailed oil painting style, dramatic lighting, 8k",
       "sub_themes": [
         "Greek gods and their bitter rivalries",
         "Greek heroes and monsters such as Heracles, Perseus and Medusa",
@@ -348,12 +348,12 @@
         "Open in the middle of the doomed moment, with the character's name and what they are about to lose"
       ],
       "visual_moods": [
-        "golden Olympian light breaking through storm clouds",
-        "icy blue Nordic fjords with northern lights and runes",
-        "desert sunset with glowing Egyptian temples and hieroglyph-like patterns",
-        "misty Japanese mountain shrines with red torii gates and cherry blossoms",
-        "blazing red and black underworld fire and obsidian",
-        "silver moonlit ancient forests with glowing spirits"
+        "golden divine light with deep storm-cloud shadows",
+        "icy blue and silver color grade",
+        "burning orange sunset glow with rich dark contrast",
+        "jade green and gold mystical light",
+        "blazing red and black fire light",
+        "silver moonlight with soft blue shadows"
       ],
       "style": "epic",
       "title_formulas": [
@@ -386,6 +386,7 @@
         "Follow. The gods have more secrets."
       ],
       "renderer": "remotion",
+      "story_bible": true,
       "scene_types": [
         "ancient_scroll",
         "dramatic_focus"
@@ -414,7 +415,7 @@
       "env_prefix": "YT_CH5",
       "display_name": "Never Look Behind",
       "youtube_channel_id": "UC1KOstqN_JDPCUrHUiGJ-kQ",
-      "visual_style_prompt": "dark horror cinematic scene, eerie fog, low-key lighting, unsettling atmosphere, desaturated colors with faint red accents, film grain, 8k",
+      "visual_style_prompt": "dark horror cinematic scene, low-key lighting, unsettling atmosphere, desaturated colors with faint red accents, film grain, 8k",
       "sub_themes": [
         "A haunted house and something living inside the walls",
         "Urban legends and unsettling phone calls",
@@ -442,12 +443,12 @@
         "Open with an unsettling detail stated as casual fact, like noticing something that should not be possible"
       ],
       "visual_moods": [
-        "pitch-black hallway with a single flickering light",
-        "moonlit fog over a dead forest with faint red glow",
-        "grainy found-footage style with cold green tint",
-        "abandoned room lit only by a dying lamp, dust in the air",
-        "rain-streaked window with a pale silhouette outside",
-        "old sepia photograph aesthetic with ghostly double exposure"
+        "near-black low-key lighting with a single pale light source",
+        "cold moonlight blue with faint red accents",
+        "grainy cold green found-footage tint",
+        "dying warm lamplight with deep shadows",
+        "desaturated grey with a sickly yellow cast",
+        "sepia old-photograph tones"
       ],
       "style": "horror",
       "title_formulas": [
@@ -471,6 +472,7 @@
         "Follow. Never look behind."
       ],
       "renderer": "remotion",
+      "story_bible": true,
       "scene_types": [
         "evidence_document",
         "dramatic_focus",
@@ -499,7 +501,7 @@
       "env_prefix": "YT_CH6",
       "display_name": "Pure Paws Stories",
       "youtube_channel_id": "UC8LGPb7zvhyjAZwJDx5Wh7A",
-      "visual_style_prompt": "warm heartwarming cinematic photography, soft golden hour lighting, adorable realistic animals, shallow depth of field, vivid natural colors, 8k",
+      "visual_style_prompt": "warm heartwarming cinematic photography, adorable realistic animals, shallow depth of field, vivid natural colors, 8k",
       "sub_themes": [
         "A loyal dog waiting faithfully for its owner",
         "A rescued animal who repays kindness years later",
@@ -527,12 +529,12 @@
         "Open with a tiny helpless animal in danger and the one human or animal who refused to leave it"
       ],
       "visual_moods": [
-        "soft golden hour meadow with glowing backlight",
-        "cozy warm indoor light with blankets and a fireplace",
-        "snowy winter landscape with gentle blue-white tones",
-        "lush green forest with dappled sunlight",
-        "seaside sunrise with pastel pink and orange sky",
-        "rainy window glow with warm lamplight and soft bokeh"
+        "soft golden hour backlight",
+        "cozy warm amber light",
+        "gentle blue-white winter tones",
+        "fresh green dappled sunlight",
+        "pastel pink and orange sunrise glow",
+        "warm lamplight with soft bokeh"
       ],
       "style": "warm",
       "title_formulas": [
@@ -560,6 +562,7 @@
         "Follow. Tomorrow's story will melt you."
       ],
       "renderer": "remotion",
+      "story_bible": true,
       "scene_types": [
         "dramatic_focus",
         "evidence_document"

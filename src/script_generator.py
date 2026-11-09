@@ -80,6 +80,7 @@ DEFAULT_LENGTH_PROFILE = "standard"
 def _profile(channel: dict[str, Any]) -> dict[str, Any]:
     return LENGTH_PROFILES[channel.get("length_profile", DEFAULT_LENGTH_PROFILE)]
 MAX_BASE_IMAGE_PROMPT_CHARS = 450
+MAX_SETTING_SCENES = 3         # sabit mekan en fazla bu kadar sahnede kullanılır
 MAX_IDENTITY_CHARS = 140       # sabit karakter/mekan tarifi başına üst sınır
 MAX_LABELS, MAX_LABEL_CHARS = 3, 28
 IMAGE_SAFETY_SUFFIX = "no text, no letters, no watermark, vertical 9:16 composition"
@@ -177,8 +178,8 @@ def _direction_block(direction: dict[str, str], channel: dict[str, Any]) -> str:
         lines.append("- Things that performed badly here (avoid them): " + "; ".join(weak) + ".")
     if "visual_mood" in direction:
         lines.append(
-            f"- Visual atmosphere: {direction['visual_mood']}. Every image prompt must express this "
-            "atmosphere while staying consistent with the subject of its scene."
+            f"- Visual palette: {direction['visual_mood']}. Use it ONLY as the color grade and lighting mood of the images. "
+            "It is NOT a location or a subject: the place, people and objects in every image come from that scene's narration."
         )
     return "\n".join(lines) + "\n\n"
 
@@ -241,6 +242,22 @@ def _popular_block(channel: dict[str, Any]) -> str:
     )
 
 
+def _bible_block(channel: dict[str, Any]) -> str:
+    """Hikaye kahramanlı kanallarda (mitoloji, korku, hayvan hikayeleri) sabit karakter; diğerlerinde her sahne farklı görsel."""
+    if not channel.get("story_bible"):
+        return (
+            "NO RECURRING CHARACTER OR LOCATION: this channel explains real events and ideas, so every scene must show "
+            "something DIFFERENT that illustrates its own sentence. Leave `characters` as an empty list and `setting` as "
+            "an empty string, leave `characters_present` empty and `show_setting` false in every scene, and put everything "
+            "the image needs (people, place, objects, action, framing, lighting) directly in that scene's image_prompt.\n"
+        )
+    return f"""STORY BIBLE (this story has a protagonist, so the viewer must recognise the same character):
+- characters: 0 to 2 recurring characters, animals or key objects that appear in several scenes. Give each a short name and one fixed `visual` description (max 20 words: species/age/build, exact colors, markings, clothing, one distinguishing feature).
+- setting: one fixed description (max 25 words) of the main location, used only in scenes that really take place there (at most {MAX_SETTING_SCENES} scenes); every other scene is set in a different place that fits its narration.
+- In each scene's image_prompt write the action, framing, lighting and any NEW place or objects. Do NOT redescribe the characters or the setting there; list the exact names of everyone visible in `characters_present` and set `show_setting` to true only when the fixed location is visible. Scenes where the character is not on screen (a close-up of an object, a landscape, a crowd, a symbol) must not list them. The code inserts the fixed descriptions word for word.
+"""
+
+
 def _build_prompt(channel: dict[str, Any], past_topics: list[str], direction: dict[str, str]) -> str:
     history_block = "\n".join(f"- {t}" for t in past_topics[-MAX_HISTORY_TOPICS:]) or "- (none yet)"
     recent_block = "\n".join(f"- {t}" for t in past_topics[-RECENT_SUBJECTS_SHOWN:]) or "- (none yet)"
@@ -289,24 +306,22 @@ SCRIPT RULES:
 - Original storytelling only. No real-person defamation, no graphic gore, no hate speech, no medical or political misinformation. Keep it advertiser-friendly.
 - Do not use emojis, hashtags, stage directions or scene numbers inside narration.
 
-STORY BIBLE (so the viewer sees the SAME characters and place in every scene):
-- characters: 0 to 3 recurring characters, animals or key objects that appear in two or more scenes. Give each a short name and one fixed `visual` description (max 20 words: species/age/build, exact colors, markings, clothing, one distinguishing feature).
-- setting: one fixed description (max 25 words) of the main location: architecture, weather, time of day, dominant colors.
-- In each scene's image_prompt write ONLY the action, framing and lighting. Do NOT redescribe the characters or the setting there; instead list the exact names of everyone visible in `characters_present` and set `show_setting` to true when the location is visible. The code inserts the fixed descriptions into every image prompt word for word.
-- For topics without recurring characters (space, abstract ideas) leave `characters` empty and use `setting` or a recurring key object for visual continuity.
-
+{_bible_block(channel)}
 ON-SCREEN LABELS:
 - label: a 1 to 4 word caption shown on screen when the time or place changes, for example "Kyoto, 1185", "4 years later", "That night", "Deep below". Leave it as an empty string otherwise. Use at most 3 labels per video, never in scene 1 or the last scene.
 
 IMAGE PROMPT RULES (one per scene, matching that scene's narration):
-- English, at most 60 words, highly descriptive: subject, setting, lighting, mood, camera angle. Show the exact concrete thing the narration mentions, never an abstract mood.
-- Scene 1's image is the thumbnail frame that stops the scroll: ONE bold focal subject, extreme close-up or dramatic scale contrast, strong contrast and rim light, visually shocking or intriguing, showing the mystery or the emotional peak itself (not a generic landscape).
-- Vary the shot type from scene to scene (extreme close-up, wide establishing shot, low angle, over-the-shoulder, aerial, macro); never use the same framing in two consecutive scenes.
+- THE IMAGES TELL THE STORY. Each image illustrates exactly what that scene's narration says, at the moment it is spoken, so a viewer who only watched the pictures would still follow the story and can easily picture it. Name the concrete things the sentence mentions: the people (how many, what they do), the place, the objects, the creature, the event. Example: "five strangers sit in a waiting room while grey smoke seeps from a wall vent" for a sentence about a smoke experiment, never a generic foggy road.
+- EVERY scene shows a DIFFERENT subject, place or action from the previous scenes. Never reuse the same background, the same character pose or the same composition in two scenes. If the narration is abstract (a psychological rule, a feeling), dramatize it as a concrete situation a viewer can recognise (a person staring at a phone in an empty office, a crowd where one person looks away) or show the real object or place it refers to.
+- Real events, people, places and dates in the narration must look like that era and place (clothing, architecture, technology).
+- English, at most 60 words, highly descriptive: subject, setting, lighting, mood, camera angle.
+- Scene 1's image is the thumbnail frame that stops the scroll: ONE bold focal subject that shows the shocking fact itself, strong contrast and rim light.
+- Vary the shot type (extreme close-up, wide establishing shot, low angle, over-the-shoulder, aerial, macro); never the same framing in two consecutive scenes.
 - Keep the main subject in the upper two thirds of the frame and the bottom third visually calm and darker, because subtitles are placed there.
 - The last image should visually echo the closing question (a door left open, two paths, an unanswered choice).
 - Vertical 9:16 composition. Absolutely NO text, letters, numbers, captions, logos or watermarks in the image.
-- Keep one consistent visual style across all scenes of the video.
-- Motion graphics (documents, radar, scans, scrolls, icons) are drawn OVER the image and the image is darkened, so the image is the atmosphere behind them: a strong, moody, readable scene, not a busy collage.
+- Keep one consistent color palette and lighting style across the video, but the content of each image must change.
+- Motion graphics (documents, radar, scans, scrolls, icons) are drawn OVER a few scenes and the image is darkened there, so the image stays a strong readable scene, not a busy collage.
 {_visual_block(channel)}
 SEO RULES:
 - topic_summary: one short sentence (max 120 characters) that STARTS with the central subject (for example "Voyager 1: ...") so repeats can be detected later.
@@ -571,8 +586,13 @@ def _finalize(
     if len(scenes) < MIN_SCENES:
         raise ValueError(f"Yetersiz sahne sayısı: {len(scenes)} (en az {MIN_SCENES})")
 
-    visuals = {_normalize(c.name): _trim(c.visual, MAX_IDENTITY_CHARS) for c in raw.characters[:3] if c.name.strip() and c.visual.strip()}
-    setting = _trim(raw.setting, MAX_IDENTITY_CHARS) if raw.setting else ""
+    bible = bool(channel.get("story_bible"))
+    visuals = (
+        {_normalize(c.name): _trim(c.visual, MAX_IDENTITY_CHARS) for c in raw.characters[:2] if c.name.strip() and c.visual.strip()}
+        if bible else {}
+    )
+    setting = _trim(raw.setting, MAX_IDENTITY_CHARS) if raw.setting and bible else ""
+    setting_scenes = 0
     base_seed = random.randint(1, 2_147_483_647)   # aynı hikayedeki karakterli sahneler aynı tohumla başlar
     labels_used = 0
     visual_state: dict[str, Any] = {}
@@ -583,7 +603,8 @@ def _finalize(
         if not narration:
             raise ValueError("Boş narration içeren sahne var")
         identity = [visuals[k] for k in (_normalize(n) for n in scene.characters_present) if k in visuals]
-        used_setting = setting if scene.show_setting else ""
+        used_setting = setting if scene.show_setting and setting_scenes < MAX_SETTING_SCENES else ""
+        setting_scenes += 1 if used_setting else 0
         label = _clean(scene.label)
         if not label or labels_used >= MAX_LABELS or index in (0, len(scenes) - 1) or len(label) > MAX_LABEL_CHARS:
             label = ""
