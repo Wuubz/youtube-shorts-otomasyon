@@ -1,40 +1,47 @@
 {
   "ch1_cosmic_whatif": {
-    "updated": "2026-11-02",
-    "videos": 13,
-    "median_views": 57,
+    "updated": "2026-11-09",
+    "videos": 27,
+    "median_views": 24,
     "best": {
-      "title": "Saturn's Ring Is Made of Alien Ocean Water",
-      "views": 216
+      "title": "Andromeda Is Secretly Already Colliding With Us",
+      "views": 283
     },
     "winners": [
+      "Andromeda Is Secretly Already Colliding With Us",
       "Saturn's Ring Is Made of Alien Ocean Water",
       "The Sunless Planet That Radiates Ghost Light",
-      "This Star Was Kicked Out Of Our Galaxy"
+      "This Star Was Kicked Out Of Our Galaxy",
+      "WASP-12b Is Secretly Being Eaten Alive"
     ],
     "losers": [
       "This Phantom Force Should Not Exist",
       "The Star That Vanished Without an Explosion",
       "The Invisible Doorway That Could Destroy Earth",
-      "Voyager Never Actually Left Our Solar System",
-      "What Happens If You Travel Through a Wormhole?"
+      "What Happens If Stars Run on Dark Matter?",
+      "The Ghostly Rays That Pierce Closed Eyes"
     ],
     "by_length": {
+      "short": {
+        "videos": 9,
+        "median_views": 11
+      },
       "long": {
-        "videos": 13,
-        "median_views": 57
+        "videos": 18,
+        "median_views": 33.0
       }
     }
   },
   "ch2_dark_history": {
-    "updated": "2026-11-02",
-    "videos": 13,
-    "median_views": 17,
+    "updated": "2026-11-09",
+    "videos": 27,
+    "median_views": 16,
     "best": {
-      "title": "The Impossible 70-Ton Boxes of Saqqara",
-      "views": 120
+      "title": "Why Nobody Can Explain the Kailasa Temple",
+      "views": 218
     },
     "winners": [
+      "Why Nobody Can Explain the Kailasa Temple",
       "The Impossible 70-Ton Boxes of Saqqara",
       "The Ghost Ship That Sailed Alone for 38 Years",
       "The Forbidden Fleet That Vanished in 1307",
@@ -42,108 +49,118 @@
     ],
     "losers": [
       "The Empire That Vanished Overnight",
-      "The Ghost Watchers That Guarded a Silent Coast for 3000 Years",
       "The Darkest Scientific Lie in History",
+      "The Ghost Watchers That Guarded a Silent Coast for 3000 Years",
       "The Impossible 10 Bronze Tablets of Byblos",
-      "The Impossible 4-Night Spirit War of Friuli"
+      "Why Nobody Can Explain the Roman Dodecahedron"
     ],
     "by_length": {
+      "short": {
+        "videos": 6,
+        "median_views": 9.5
+      },
       "long": {
-        "videos": 13,
-        "median_views": 17
+        "videos": 21,
+        "median_views": 18
       }
     }
   },
   "ch3_dark_psychology": {
-    "updated": "2026-11-02",
-    "videos": 11,
-    "median_views": 166,
+    "updated": "2026-11-09",
+    "videos": 25,
+    "median_views": 56,
     "best": {
       "title": "Why Agreeing With Everyone Destroys Respect",
-      "views": 964
+      "views": 975
     },
     "winners": [
       "Why Agreeing With Everyone Destroys Respect",
-      "The Stoic Secret to Never Feeling Betrayed"
+      "The Stoic Secret to Never Feeling Betrayed",
+      "3 Signs Someone Is Exploiting Your Overthinking",
+      "The Stoic Secret to Reading Anyone",
+      "Why Explaining Yourself Destroys Respect"
     ],
     "losers": [
-      "Why Solitude Makes You Untouchable",
-      "Why Offering Help First Makes People Lose Respect For You",
-      "Why Overthinking Options Makes People Lose Respect For You",
-      "3 Signs Someone Is Playing The Avoidant Trap",
-      "Why Being Too Open Kills Their Attraction"
+      "Why Seeking Company When Lonely Destroys Respect",
+      "Why Accepting Fake Compliments Destroys Respect",
+      "Why Apologizing First Makes People Lose Respect For You",
+      "3 Signs Someone Is a Dark Triad Tactician",
+      "Why Showing Your Wealth Makes People Lose Respect"
     ],
     "by_length": {
       "long": {
-        "videos": 11,
-        "median_views": 166
+        "videos": 25,
+        "median_views": 56
       }
     }
   },
   "ch4_epic_mythology": {
-    "updated": "2026-11-02",
-    "videos": 11,
-    "median_views": 20,
+    "updated": "2026-11-09",
+    "videos": 24,
+    "median_views": 20.5,
     "best": {
       "title": "The God Who Orchestrated His Own Death",
-      "views": 1282
+      "views": 1283
     },
     "winners": [
       "The God Who Orchestrated His Own Death",
       "The Most Tragic Love Story in Egyptian Mythology",
-      "The Darkest Mythological Love Story Ever"
+      "Why Even The Gods Feared Kronos",
+      "The Darkest Mythological Love Story Ever",
+      "Artemis's Darkest Secret Nobody Tells You"
     ],
     "losers": [
       "The Darkest Prophecy Ever Told About Prince Yamato Takeru",
       "Loki Was Not What The Myths Say",
       "The God Who Demanded a Princess",
-      "The God Who Bet His Own Head",
-      "The 90-Foot Bone Demon Watching You"
+      "The Real Reason Ra Demands Your Shattered Memories",
+      "The God Who Bet His Own Head"
     ],
     "by_length": {
       "short": {
-        "videos": 3,
-        "median_views": 20
+        "videos": 4,
+        "median_views": 19.5
       },
       "long": {
-        "videos": 8,
-        "median_views": 22.0
+        "videos": 20,
+        "median_views": 20.5
       }
     }
   },
   "ch5_midnight_horror": {
-    "updated": "2026-11-02",
-    "videos": 10,
-    "median_views": 8.0,
+    "updated": "2026-11-09",
+    "videos": 24,
+    "median_views": 7.5,
     "best": {
       "title": "There Was Someone In The School Bell Tower",
-      "views": 256
+      "views": 260
     },
     "winners": [
       "There Was Someone In The School Bell Tower",
       "There Was Someone Inside My Walls"
     ],
     "losers": [
-      "The Silent Campfire in the Woods",
-      "There Was Someone Sitting On My Chest",
-      "I Found A Sketchbook Under My Floorboards",
-      "Do Not Answer If The Monitor Calls Your Name"
+      "The Harvest Effigy That Whispered My Name",
+      "There Was Someone Sewing My Shadow",
+      "The Silver Watch That Ticked Backward",
+      "I Found A Jar Of Nails In My Wall",
+      "The Silent Campfire in the Woods"
     ],
     "by_length": {
       "short": {
-        "videos": 1,
-        "median_views": 11
+        "videos": 8,
+        "median_views": 7.0
       },
       "long": {
-        "videos": 9,
-        "median_views": 8
+        "videos": 16,
+        "median_views": 7.5
       }
     }
   },
   "ch6_universal_stories": {
-    "updated": "2026-11-02",
-    "videos": 11,
-    "median_views": 5,
+    "updated": "2026-11-09",
+    "videos": 24,
+    "median_views": 4.5,
     "best": {
       "title": "He Saved This Pup... Years Later It Saved Him",
       "views": 602
@@ -151,19 +168,21 @@
     "winners": [
       "He Saved This Pup... Years Later It Saved Him",
       "Everyone Laughed At This Owl. Then He Purred.",
-      "The Three-Legged Dog Who Never Gave Up"
+      "The Three-Legged Dog Who Never Gave Up",
+      "He Left Cooper Behind. It Found Him Anyway.",
+      "They Mocked This Tiny Petrel. Then It Saved A Seal."
     ],
     "losers": [
       "Why Did A Wild Fox Sneak Inside This Cabin?",
-      "Why This Dog Waits Here Every Sunset...",
-      "This Tiny Otter Waited 5 Years For Him",
-      "He Saved This Piglet... Years Later It Saved Him",
-      "What an Old Dog Taught Me About Love"
+      "The Rescued Lynx Who Came Back in the Storm",
+      "Everyone Laughed At This Cat. Then He Guarded A Doe.",
+      "She Rescued This Badger. What It Did Next Changed Everything.",
+      "This Retired Search Dog Waited 7 Years For His Handler"
     ],
     "by_length": {
       "long": {
-        "videos": 11,
-        "median_views": 5
+        "videos": 24,
+        "median_views": 4.5
       }
     }
   }
