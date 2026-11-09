@@ -45,6 +45,7 @@ OPTIONAL_STRING_LISTS = (
 )
 VALID_SCHEDULE_MODES = ("scheduled", "immediate")
 VALID_LENGTH_PROFILES = ("standard", "short")
+VALID_RENDERERS = ("remotion", "ffmpeg")
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
@@ -109,6 +110,8 @@ def _validate_channel(channel_id: str, cfg: dict[str, Any]) -> None:
             raise ConfigError(f"{channel_id}: {key} boş olmayan metinlerden oluşan bir liste olmalı")
     if cfg.get("length_profile", "standard") not in VALID_LENGTH_PROFILES:
         raise ConfigError(f"{channel_id}: length_profile {VALID_LENGTH_PROFILES} değerlerinden biri olmalı")
+    if cfg.get("renderer", "remotion") not in VALID_RENDERERS:
+        raise ConfigError(f"{channel_id}: renderer {VALID_RENDERERS} değerlerinden biri olmalı")
     if "series_tag" in cfg and "{n}" not in str(cfg["series_tag"]):
         raise ConfigError(f"{channel_id}: series_tag '{{n}}' (bölüm numarası) içermeli")
 

@@ -5,7 +5,7 @@ import asyncio
 import logging
 import os
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +31,10 @@ class AudioResult:
     ass_path: Path              # gömülecek altyazı
     durations: list[float]      # sahne başına süre (sn)
     total_duration: float
+    # Remotion için ham altyazı verisi (FFmpeg yolu yalnızca .ass dosyasını kullanır)
+    cues: list = field(default_factory=list)            # (başlangıç, bitiş, metin, kelime zamanları)
+    labels: list = field(default_factory=list)          # (başlangıç, bitiş, etiket)
+    highlight_from: float | None = None                 # bu andan sonraki bloklar kapanış sorusudur
 
 
 # --------------------------------------------------------------------------- #
@@ -381,7 +385,11 @@ def generate_audio_and_subtitles(
         offset += duration
 
     ass_path = work_dir / "subtitles.ass"
-    write_ass(cues, ass_path, style, highlight_from=sum(durations[:-1]), labels=labels)
+    highlight_from = sum(durations[:-1])
+    write_ass(cues, ass_path, style, highlight_from=highlight_from, labels=labels)
     total = sum(durations)
     log.info("Ses hazır: %d sahne, toplam %.1f sn, %d altyazı bloğu", len(durations), total, len(cues))
-    return AudioResult(audio_path=narration, ass_path=ass_path, durations=durations, total_duration=total)
+    return AudioResult(
+        audio_path=narration, ass_path=ass_path, durations=durations, total_duration=total,
+        cues=cues, labels=labels, highlight_from=highlight_from,
+    )

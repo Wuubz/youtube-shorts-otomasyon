@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.audio_subtitle import AudioResult, probe_duration
+from src.remotion_bridge import render_silent_video
 from src.styles import resolve_style, usable_transitions
 
 log = logging.getLogger(__name__)
@@ -200,6 +201,60 @@ def _video_graph(
     return parts
 
 
+def _audio_graph(
+    voice_index: int, music_index: int | None, sfx: list[tuple[Path, float, float]], sfx_base: int, total: float,
+) -> list[str]:
+    """Seslendirme mastering'i + kısık müzik + ses efektlerini karıştırıp [a] etiketine bağlayan filtre parçaları."""
+    graph: list[str] = []
+    voice_chain = f"[{voice_index}:a]aresample=44100,{VOICE_MASTERING}"
+    labels = ["[voice]"]
+    if music_index is not None:
+        fade_start = max(total - 2.0, 0.0)
+        graph.append(
+            f"[{music_index}:a]aresample=44100,volume={MUSIC_VOLUME},afade=t=in:d=1,"
+            f"afade=t=out:st={fade_start:.2f}:d=2[bg]"
+        )
+        labels.append("[bg]")
+    for k, (_, at, level) in enumerate(sfx):
+        ms = round(at * 1000)
+        # apad: efekt bitince girdi sessizlikle sürer, böylece amix kalan sesleri yükseltmez
+        graph.append(f"[{sfx_base + k}:a]aresample=44100,volume={level},adelay={ms}|{ms},apad[s{k}]")
+        labels.append(f"[s{k}]")
+    if len(labels) == 1:
+        graph.append(f"{voice_chain}[a]")
+    else:
+        graph.append(f"{voice_chain}[voice]")
+        graph.append(
+            f"{''.join(labels)}amix=inputs={len(labels)}:duration=first:dropout_transition=0,"
+            f"volume={len(labels)},alimiter=limit=0.95[a]"
+        )
+    return graph
+
+
+def _mux_audio(
+    silent_video: Path, audio: AudioResult, music: Path | None, total: float, output: Path, style: dict,
+) -> None:
+    """Remotion'un sessiz videosuna sesi ekler. Remotion JPEG kareler yüzünden tam aralıklı (yuvj420p) çıktı verdiği için
+    görüntü standart limited-range yuv420p'ye çevrilerek yeniden kodlanır (eski FFmpeg yoluyla aynı biçim)."""
+    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(silent_video.resolve()), "-i", str(audio.audio_path.resolve())]
+    if music:
+        cmd += ["-stream_loop", "-1", "-i", str(music.resolve())]
+    sfx = _sfx_plan(audio.durations, style, total)
+    sfx_base = 2 + (1 if music else 0)
+    for path, _, _ in sfx:
+        cmd += ["-i", str(path.resolve())]
+    graph = _audio_graph(1, 2 if music else None, sfx, sfx_base, total)
+    cmd += [
+        "-filter_complex", ";".join(graph),
+        "-map", "0:v", "-map", "[a]",
+        "-vf", "scale=out_range=tv,format=yuv420p",
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p", "-r", str(FPS),
+        "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart",
+        "-t", f"{total:.3f}", str(output.resolve()),
+    ]
+    _run(cmd)
+
+
 def _assemble(
     clips: list[Path], scene_frames: list[int], audio: AudioResult, music: Path | None,
     use_xfade: bool, total: float, output: Path, style: dict,
@@ -221,28 +276,7 @@ def _assemble(
         cmd += ["-f", "lavfi", "-i", f"color=c={style['progress']}@0.9:s={WIDTH}x{BAR_HEIGHT}:r={FPS}:d={total + 1:.2f}"]
 
     graph = _video_graph(n, scene_frames, use_xfade, style, bar_index, total, audio.ass_path.name)
-    voice_chain = f"[{n}:a]aresample=44100,{VOICE_MASTERING}"
-    labels = ["[voice]"]
-    if music:
-        fade_start = max(total - 2.0, 0.0)
-        graph.append(
-            f"[{n + 1}:a]aresample=44100,volume={MUSIC_VOLUME},afade=t=in:d=1,"
-            f"afade=t=out:st={fade_start:.2f}:d=2[bg]"
-        )
-        labels.append("[bg]")
-    for k, (_, at, level) in enumerate(sfx):
-        ms = round(at * 1000)
-        # apad: efekt bitince girdi sessizlikle sürer, böylece amix kalan sesleri yükseltmez
-        graph.append(f"[{sfx_base + k}:a]aresample=44100,volume={level},adelay={ms}|{ms},apad[s{k}]")
-        labels.append(f"[s{k}]")
-    if len(labels) == 1:
-        graph.append(f"{voice_chain}[a]")
-    else:
-        graph.append(f"{voice_chain}[voice]")
-        graph.append(
-            f"{''.join(labels)}amix=inputs={len(labels)}:duration=first:dropout_transition=0,"
-            f"volume={len(labels)},alimiter=limit=0.95[a]"
-        )
+    graph += _audio_graph(n, n + 1 if music else None, sfx, sfx_base, total)
 
     cmd += [
         "-filter_complex", ";".join(graph),
@@ -262,25 +296,30 @@ def _plain(style: dict) -> dict:
     return plain
 
 
-def render_video(
-    images: list[Path], audio: AudioResult, channel_id: str, work_dir: Path, output_dir: Path,
-    style: dict | None = None,
-) -> Path:
-    """Görseller + ses + altyazı (+ müzik) ile son MP4 dosyasını üretir."""
-    if len(images) != len(audio.durations):
-        raise ValueError("Görsel sayısı ile sahne sesi sayısı eşleşmiyor")
-    style = style or resolve_style({})
-    work_dir.mkdir(parents=True, exist_ok=True)
-    output_dir.mkdir(parents=True, exist_ok=True)
+def _alert_fallback(channel_id: str, reason: str) -> None:
+    """Remotion yedeğe düştüğünde (yalnızca GitHub Actions'ta) tek satırlık Telegram uyarısı gönderir."""
+    if not os.environ.get("GITHUB_ACTIONS"):
+        return
+    try:
+        from src.notifier import send_message
 
+        send_message(f"⚠️ {channel_id}: Remotion render başarısız, FFmpeg yedeğiyle üretildi.\n{reason.splitlines()[0][:200]}")
+    except Exception as exc:  # uyarı hatası üretimi etkilemesin
+        log.warning("Remotion yedek uyarısı gönderilemedi: %s", exc)
+
+
+def _render_with_remotion(
+    images: list[Path], audio: AudioResult, music: Path | None, total: float, output: Path, work_dir: Path, style: dict,
+) -> None:
+    effects = _effect_sequence(style["effects"], len(images))
+    silent, _ = render_silent_video(images, audio, style, effects, work_dir)
+    _mux_audio(silent, audio, music, total, output, style)
+
+
+def _render_with_ffmpeg(
+    images: list[Path], audio: AudioResult, music: Path | None, total: float, output: Path, work_dir: Path, style: dict,
+) -> None:
     scene_frames = [max(int(round(d * FPS)), FPS) for d in audio.durations]
-    total = min(audio.total_duration, SAFE_VIDEO_SECONDS)
-    music = pick_music(channel_id)
-    log.info("Stil: %s · müzik: %s", style["name"], music.name if music else "yok (yalnızca seslendirme)")
-
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    output = output_dir / f"{channel_id}_{stamp}.mp4"
-
     # 1) tam stil + geçişler  2) efektsiz + geçişler  3) efektsiz + düz birleştirme
     attempts = [(style, True), (_plain(style), True), (_plain(style), False)]
     for number, (attempt_style, use_xfade) in enumerate(attempts, start=1):
@@ -288,11 +327,47 @@ def render_video(
             extend = attempt_style["xfade_frames"] if use_xfade else 0
             clips = _render_clips(images, scene_frames, extend, work_dir, attempt_style)
             _assemble(clips, scene_frames, audio, music, use_xfade, total, output, attempt_style)
-            break
+            return
         except RuntimeError as exc:
             if number == len(attempts):
                 raise
             log.warning("Kurgu denemesi %d/%d başarısız, daha sade sürüme geçiliyor: %s", number, len(attempts), exc)
+
+
+def render_video(
+    images: list[Path], audio: AudioResult, channel_id: str, work_dir: Path, output_dir: Path,
+    style: dict | None = None, renderer: str = "remotion",
+) -> Path:
+    """Görseller + ses + altyazı (+ müzik) ile son MP4 dosyasını üretir.
+
+    renderer="remotion": hareketli grafikli kurgu (Node.js gerekir); herhangi bir hata olursa FFmpeg yoluna düşer.
+    renderer="ffmpeg": eski zoompan/ASS kurgusu. SHORTS_RENDERER ortam değişkeni kanal ayarını ezer."""
+    if len(images) != len(audio.durations):
+        raise ValueError("Görsel sayısı ile sahne sesi sayısı eşleşmiyor")
+    style = style or resolve_style({})
+    work_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    renderer = (os.environ.get("SHORTS_RENDERER") or renderer or "remotion").strip().lower()
+    total = min(audio.total_duration, SAFE_VIDEO_SECONDS)
+    music = pick_music(channel_id)
+    log.info(
+        "Stil: %s · kurgu: %s · müzik: %s", style["name"], renderer, music.name if music else "yok (yalnızca seslendirme)",
+    )
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    output = output_dir / f"{channel_id}_{stamp}.mp4"
+
+    done = False
+    if renderer == "remotion":
+        try:
+            _render_with_remotion(images, audio, music, total, output, work_dir / "remotion", style)
+            done = True
+        except Exception as exc:   # Remotion yalnızca iyileştirmedir; video hiçbir koşulda kaçmasın
+            log.warning("[%s] Remotion kurgusu başarısız, FFmpeg yedeğine geçiliyor: %s", channel_id, exc)
+            _alert_fallback(channel_id, str(exc))
+    if not done:
+        _render_with_ffmpeg(images, audio, music, total, output, work_dir, style)
 
     duration = probe_duration(output)
     if duration > MAX_VIDEO_SECONDS:

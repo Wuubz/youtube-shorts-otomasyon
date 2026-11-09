@@ -1,0 +1,21 @@
+{
+  "name": "youtube-shorts-otomasyon-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shorts kurgusu için Remotion (React) işleme motoru; Python orkestratörü src/remotion_bridge.py üzerinden çağırır",
+  "scripts": {
+    "studio": "remotion studio src/remotion/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.541",
+    "@remotion/renderer": "4.0.541",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.541"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  }
+}

@@ -80,7 +80,10 @@ def produce_video(channel: dict[str, Any], script: dict[str, Any], run_dir: Path
     """Görseller -> ses/altyazı -> kurgu zincirini çalıştırır."""
     images = generate_images(script["scenes"], run_dir / "images")
     audio = generate_audio_and_subtitles(script["scenes"], channel, run_dir / "audio")
-    return render_video(images, audio, channel["id"], run_dir / "video", OUTPUT_DIR, resolve_style(channel))
+    return render_video(
+        images, audio, channel["id"], run_dir / "video", OUTPUT_DIR, resolve_style(channel),
+        renderer=channel.get("renderer", "remotion"),
+    )
 
 
 def _upload_with_retry(channel: dict[str, Any], video: Path, script: dict[str, Any], slot: int | None) -> tuple[str, str | None]:

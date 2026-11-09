@@ -128,6 +128,39 @@ jobs:
         if: steps.pending.outputs.count != '0'
         run: pip install -r requirements.txt
 
+      # Remotion (hareketli grafik kurgusu): Node.js + Chrome Headless Shell için Linux kütüphaneleri.
+      # Bu adımlardan biri başarısız olursa main.py otomatik olarak FFmpeg kurgusuna düşer (video kaçmaz).
+      - name: Install Chrome libraries for Remotion
+        if: steps.pending.outputs.count != '0'
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y libnss3 libdbus-1-3 libatk1.0-0 libasound2t64 libxrandr2 libxkbcommon-dev \
+            libxfixes3 libxcomposite1 libxdamage1 libgbm-dev libcups2 libcairo2 libpango-1.0-0 libatk-bridge2.0-0
+
+      - name: Setup Node.js
+        if: steps.pending.outputs.count != '0'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Remotion dependencies
+        if: steps.pending.outputs.count != '0'
+        continue-on-error: true
+        run: npm ci --no-audit --no-fund
+
+      - name: Cache Remotion browser
+        if: steps.pending.outputs.count != '0'
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.remotion
+          key: remotion-browser-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Ensure Remotion browser
+        if: steps.pending.outputs.count != '0'
+        continue-on-error: true
+        run: npx remotion browser ensure
+
       - name: Generate and upload Shorts
         id: generate
         if: steps.pending.outputs.count != '0'

@@ -76,7 +76,8 @@
       "follow_lines": [
         "Follow for a new cosmic mystery daily.",
         "Follow. The universe gets stranger tomorrow."
-      ]
+      ],
+      "renderer": "remotion"
     },
     "ch2_dark_history": {
       "enabled": true,
@@ -155,7 +156,8 @@
       "follow_lines": [
         "Follow for more forgotten history.",
         "Follow. History has more secrets."
-      ]
+      ],
+      "renderer": "remotion"
     },
     "ch3_dark_psychology": {
       "enabled": true,
@@ -231,7 +233,8 @@
       "follow_lines": [
         "Follow for a new mind rule daily.",
         "Follow. Tomorrow's rule is darker."
-      ]
+      ],
+      "renderer": "remotion"
     },
     "ch4_epic_mythology": {
       "enabled": true,
@@ -353,7 +356,8 @@
       "follow_lines": [
         "Follow for more forbidden myths.",
         "Follow. The gods have more secrets."
-      ]
+      ],
+      "renderer": "remotion"
     },
     "ch5_midnight_horror": {
       "enabled": true,
@@ -428,7 +432,8 @@
       "follow_lines": [
         "Follow if you dare.",
         "Follow. Never look behind."
-      ]
+      ],
+      "renderer": "remotion"
     },
     "ch6_universal_stories": {
       "enabled": true,
@@ -507,7 +512,8 @@
       "follow_lines": [
         "Follow for more heartwarming stories.",
         "Follow. Tomorrow's story will melt you."
-      ]
+      ],
+      "renderer": "remotion"
     }
   }
 }
