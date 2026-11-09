@@ -16,7 +16,8 @@ from src.config_loader import (
     MAX_HISTORY_TOPICS, get_gemini_api_key, get_learned, get_themes, get_titles, get_video_count,
 )
 from src.visuals import (
-    BADGES, DEFAULT_SCENE_TYPE, DEFAULT_SFX_FOR_TYPE, MAX_BADGES_PER_VIDEO, NO_BADGE, SCENE_TYPES, SFX_CUES,
+    BADGES, DEFAULT_SCENE_TYPE, DEFAULT_SFX_FOR_TYPE, MAX_BADGES_PER_VIDEO, MAX_SPECIAL_SCENES, NO_BADGE, PLAIN_SCENE_TYPE,
+    SCENE_TYPES, SFX_CUES,
 )
 
 log = logging.getLogger(__name__)
@@ -210,12 +211,12 @@ def _visual_block(channel: dict[str, Any]) -> str:
     type_lines = "\n".join(f"  * {t}: {SCENE_TYPE_HELP[t]}" for t in types)
     badge_lines = "\n".join(f"  * {b}: {BADGE_HELP[b]}" for b in badges)
     return f"""
-VISUAL DIRECTION (you are also the film director: the video is a motion essay, not a slideshow). For EVERY scene choose:
-- scene_type, one of the layers below. Pick the one that best proves what the narration says; do not use the same type in two consecutive scenes. Scene 1 and the last scene should be dramatic_focus when it is allowed.
+VISUAL DIRECTION (you are also the film director). The video must feel clean, calm and professional: a strong image, a simple caption, and a motion graphic ONLY at the few beats where it truly proves the point. Most scenes get no graphic at all, so choose carefully. For EVERY scene fill these fields:
+- scene_type: the graphic layer that best proves what the narration says. At most {MAX_SPECIAL_SCENES} scenes of the whole video will keep their layer (the strongest beats in the middle of the story, never the first or the last scene), the others are shown as clean images. Allowed layers:
 {type_lines}
-- key_phrase: the 2 or 3 consecutive words of THIS scene's narration that carry the shock (a number, a forbidden concept, the twist). Copy them EXACTLY as written in the narration, in the same order. They are slammed on screen with a screen shake at the moment they are spoken, so choose the sharpest words, not filler.
-- sfx_cue: the sound that fires when the scene's graphic lands. One of: slam (heavy impact, files and facts), marker_scratch (underlining a claim), heartbeat (fear, tension, emotion), glitch (anomaly, corruption, digital), camera_shutter (evidence captured, a revealing moment), deep_boom (a huge reveal, doom). Vary them; use deep_boom at most once.
-- floating_badge: a glowing icon floating over the scene; use it on at most {MAX_BADGES_PER_VIDEO} scenes (the strongest emotional beats), otherwise "none". Allowed icons:
+- key_phrase: the 2 or 3 consecutive words of THIS scene's narration that carry the point (a number, a forbidden concept, the twist). Copy them EXACTLY as written in the narration, in the same order.
+- sfx_cue: the soft sound that plays when the scene's graphic lands. One of: slam (files and facts), marker_scratch (underlining a claim), heartbeat (fear, tension, emotion), glitch (anomaly, corruption, digital), camera_shutter (a revealing moment), deep_boom (a huge reveal, doom).
+- floating_badge: an icon for the single strongest emotional beat of the video (at most {MAX_BADGES_PER_VIDEO} scene), otherwise "none". Allowed icons:
 {badge_lines}
   * none: no icon
 """
@@ -490,6 +491,36 @@ def _resolve_visuals(
     }
 
 
+def _thin_visuals(scenes: list[dict[str, Any]]) -> None:
+    """Sadelik kuralı: Gemini'nin seçtiği katmanlardan yalnızca en fazla MAX_SPECIAL_SCENES tanesi korunur (ortadaki
+    sahneler, aralarında boşluk, her tür bir kez); diğer tüm sahneler grafiksiz 'plain' olur. Rozet de yalnızca
+    korunan sahnelerden birinde kalır. Böylece her videoda aynı animasyonlar art arda tekrarlanmaz."""
+    count = len(scenes)
+    middle = range(1, count - 1)                                  # kanca ve kapanış sahnesi her zaman sade
+    wanted = {i: scenes[i]["scene_type"] for i in middle if scenes[i]["scene_type"] in SCENE_TYPES}
+    chosen: list[int] = []
+    for target in (count * 0.34, count * 0.70)[:MAX_SPECIAL_SCENES]:
+        pool = [
+            i for i in wanted
+            if i not in chosen
+            and all(abs(i - c) > 1 and wanted[i] != wanted[c] for c in chosen)
+        ]
+        # dramatic_focus (sinema şeridi) yalnızca başka seçenek kalmadıysa kullanılır
+        preferred = [i for i in pool if wanted[i] != DEFAULT_SCENE_TYPE] or pool
+        if preferred:
+            chosen.append(min(preferred, key=lambda i: (abs(i - target), random.random())))
+
+    badge_kept = False
+    for index, scene in enumerate(scenes):
+        if index in chosen:
+            if scene["floating_badge"] != NO_BADGE and not badge_kept:
+                badge_kept = True
+            else:
+                scene["floating_badge"] = NO_BADGE
+            continue
+        scene.update(scene_type=PLAIN_SCENE_TYPE, key_phrase="", sfx_cue="", floating_badge=NO_BADGE)
+
+
 def _finalize_image_prompt(prompt: str, style: str, identity: list[str] | None = None, setting: str = "") -> str:
     """Sabit karakter/mekan tarifleri en başa konur (görsel modeller baştaki kelimeleri daha çok dikkate alır)."""
     base = _clean(prompt).rstrip(".,; ")
@@ -569,6 +600,7 @@ def _finalize(
         if identity or used_setting:
             entry["seed"] = base_seed
         final_scenes.append(entry)
+    _thin_visuals(final_scenes)
     _check_hook(final_scenes[0]["narration"])
     question = _ensure_closing_question(final_scenes, raw.comment_question)
 

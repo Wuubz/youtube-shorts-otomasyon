@@ -12,6 +12,13 @@ SFX_DIR = ROOT_DIR / "assets" / "sfx"
 
 SCENE_TYPES = ("evidence_document", "radar_hud", "mind_scan", "ancient_scroll", "dramatic_focus")
 DEFAULT_SCENE_TYPE = "dramatic_focus"
+PLAIN_SCENE_TYPE = "plain"       # grafiksiz sahne: yalnızca görsel, kamera hareketi ve altyazı (videonun çoğu böyledir)
+
+# Sadelik kuralı: bir videoda en fazla bu kadar sahne özel katman (belge, radar, tarama...) taşır; her tür en fazla bir kez.
+MAX_SPECIAL_SCENES = 2
+
+# Sahne geçişleri sakin tutulur (daire açılması, kayma, piksel gibi gösterişli geçişler kullanılmaz)
+CALM_TRANSITIONS = ("dissolve", "dissolve", "dissolve", "fade", "fadeblack")
 
 BADGES = ("warning", "skull", "galaxy", "stoic_pillar", "broken_heart")
 NO_BADGE = "none"
@@ -52,7 +59,7 @@ SFX_LEVEL = {
 }
 EXTRA_LEVEL = {"typewriter": 0.22, "marker": 0.22}
 FIRST_SCENE_SFX_FACTOR = 0.7
-MAX_BADGES_PER_VIDEO = 4
+MAX_BADGES_PER_VIDEO = 1
 
 
 def impact_seconds(scene_type: str, index: int) -> float:

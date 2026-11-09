@@ -14,7 +14,7 @@ from typing import Any
 
 from src.audio_subtitle import AudioResult, _ass_escape, _is_emphasis, _karaoke_slices, _spread, probe_duration
 from src.visuals import (
-    BADGES, DEFAULT_SCENE_TYPE, DEFAULT_SFX_FOR_TYPE, EXTRA_LEVEL, FIRST_SCENE_SFX_FACTOR, NO_BADGE, SCENE_TYPES,
+    BADGES, CALM_TRANSITIONS, DEFAULT_SCENE_TYPE, DEFAULT_SFX_FOR_TYPE, PLAIN_SCENE_TYPE, EXTRA_LEVEL, FIRST_SCENE_SFX_FACTOR, NO_BADGE, SCENE_TYPES,
     SFX_DIR, SFX_FILES, SFX_CUES, SFX_LEVEL, impact_seconds,
 )
 
@@ -126,13 +126,15 @@ def _scene_specs(
         cumulative += duration
         end = max(int(round(cumulative * FPS)), start + min_frames)
         meta = audio.scenes[index] if index < len(audio.scenes) else {}
-        scene_type = meta.get("scene_type") if meta.get("scene_type") in SCENE_TYPES else DEFAULT_SCENE_TYPE
+        raw_type = meta.get("scene_type")
+        scene_type = raw_type if raw_type in SCENE_TYPES or raw_type == PLAIN_SCENE_TYPE else PLAIN_SCENE_TYPE
+        plain = scene_type == PLAIN_SCENE_TYPE
         frames = end - start
-        impact = int(round(impact_seconds(scene_type, index) * FPS))
-        impact = max(6, min(impact, max(frames - 12, 6)))           # kısa sahnede de sahne bitmeden çarpsın
+        impact = 0 if plain else int(round(impact_seconds(scene_type, index) * FPS))
+        impact = 0 if plain else max(6, min(impact, max(frames - 12, 6)))           # kısa sahnede de sahne bitmeden çarpsın
         start_s, end_s = start / FPS, end / FPS
         words = _scene_words(cues, start_s, end_s)
-        key_phrase = str(meta.get("key_phrase") or "").strip()
+        key_phrase = "" if plain else str(meta.get("key_phrase") or "").strip()
         times = _find_phrase_times(words, key_phrase) if key_phrase else None
         badge = meta.get("floating_badge") if meta.get("floating_badge") in BADGES else NO_BADGE
         specs.append({
@@ -142,7 +144,9 @@ def _scene_specs(
             "keyStart": round(times[0], 3) if times else None,
             "keyEnd": round(times[1], 3) if times else None,
             "words": words if scene_type == "evidence_document" else [],
-            "sfx": meta.get("sfx_cue") if meta.get("sfx_cue") in SFX_CUES else DEFAULT_SFX_FOR_TYPE[scene_type],
+            "sfx": None if plain else (
+                meta.get("sfx_cue") if meta.get("sfx_cue") in SFX_CUES else DEFAULT_SFX_FOR_TYPE[scene_type]
+            ),
         })
         start = end
     return specs
@@ -162,6 +166,8 @@ def plan_sfx(scenes: list[dict[str, Any]], total_seconds: float) -> list[tuple[P
         factor = FIRST_SCENE_SFX_FACTOR if index == 0 else 1.0
         at = scene["start"] / FPS + scene["impact"] / FPS
         cue = scene["sfx"]
+        if not cue:
+            continue                                                # grafiksiz sahnede ses efekti yok
         add(SFX_FILES[cue], at, SFX_LEVEL[cue] * factor)
         if scene["type"] == "evidence_document":
             add("typewriter.mp3", at + 0.3, EXTRA_LEVEL["typewriter"] * factor)
@@ -171,10 +177,10 @@ def plan_sfx(scenes: list[dict[str, Any]], total_seconds: float) -> list[tuple[P
 
 
 def _pick_transitions(style: dict[str, Any], count: int) -> list[str]:
-    pool = list(style.get("transitions") or ["dissolve"])
+    pool = list(CALM_TRANSITIONS)            # sakin geçişler: çoğunlukla çapraz geçiş, ara sıra kararma
     picks: list[str] = []
     for _ in range(count):
-        options = [t for t in pool if not picks or t != picks[-1]] or pool
+        options = [t for t in pool if not picks or t != picks[-1] or t == "dissolve"]
         picks.append(random.choice(options))
     return picks
 

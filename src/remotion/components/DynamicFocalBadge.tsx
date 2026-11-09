@@ -109,27 +109,13 @@ export const DynamicFocalBadge: React.FC<{badge: BadgeType; durationInFrames: nu
     extrapolateLeft: 'clamp', extrapolateRight: 'clamp',
   });
   const cx = interpolate(drift, [0, 1], [540, 905]);
-  const cy = interpolate(drift, [0, 1], [470, 390]) + Math.sin(frame / 9) * 9;
-  const size = interpolate(drift, [0, 1], [300, 150]);
-  const pulse = 1 + 0.045 * Math.sin(frame / 4.5);
+  const cy = interpolate(drift, [0, 1], [470, 390]) + Math.sin(frame / 14) * 5;
+  const size = interpolate(drift, [0, 1], [230, 130]);
+  const pulse = 1;
   const scale = Math.max(appear, 0) * pulse;
 
   return (
     <div style={{position: 'absolute', left: cx - size / 2, top: cy - size / 2, width: size, height: size, opacity: Math.min(appear, 1) * exit}}>
-      {[0, 1].map((i) => {
-        // nabız halkaları: büyüyüp sönen neon çemberler
-        const phase = ((frame + i * 16) % 32) / 32;
-        return (
-          <div
-            key={i}
-            style={{
-              position: 'absolute', inset: 0, borderRadius: '50%',
-              border: `${Math.max(2, size * 0.012)}px solid ${look.ring}`,
-              transform: `scale(${1 + phase * 0.55})`, opacity: (1 - phase) * 0.7,
-            }}
-          />
-        );
-      })}
       <div
         style={{
           position: 'absolute', inset: 0, borderRadius: '50%', transform: `scale(${scale})`,

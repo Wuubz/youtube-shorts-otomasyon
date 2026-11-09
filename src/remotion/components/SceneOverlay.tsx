@@ -10,6 +10,8 @@ import {RadarHud} from './RadarHud';
 // Sahne türüne göre hareketli grafik katmanını seçer (Sequence içinde çağrılır: kare sayısı sahne başından sayılır).
 export const SceneOverlay: React.FC<{scene: SceneSpec; theme: Theme}> = ({scene, theme}) => {
   switch (scene.type) {
+    case 'plain':
+      return null;
     case 'evidence_document':
       return <EvidenceOverlay scene={scene} frames={scene.frames} />;
     case 'radar_hud':

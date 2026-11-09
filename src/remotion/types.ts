@@ -18,7 +18,7 @@ export type Cue = {
 
 export type Label = {start: number; end: number; text: string};
 
-export type SceneType = 'evidence_document' | 'radar_hud' | 'mind_scan' | 'ancient_scroll' | 'dramatic_focus';
+export type SceneType = 'evidence_document' | 'radar_hud' | 'mind_scan' | 'ancient_scroll' | 'dramatic_focus' | 'plain';
 export type BadgeType = 'warning' | 'skull' | 'galaxy' | 'stoic_pillar' | 'broken_heart' | 'none';
 
 export type SceneWord = {t: string; s: number; e: number};
@@ -34,7 +34,7 @@ export type SceneSpec = {
   keyStart: number | null; // ifadenin söylendiği an (sn, videonun başından)
   keyEnd: number | null;
   words: SceneWord[]; // kanıt belgesinde altı çizilecek kelimeler (yalnızca evidence_document)
-  sfx: string;
+  sfx: string | null; // null: ses efekti yok
 };
 
 export type ShortsProps = {
