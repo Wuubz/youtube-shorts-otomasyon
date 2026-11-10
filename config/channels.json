@@ -563,7 +563,6 @@
       ],
       "renderer": "remotion",
       "story_bible": true,
-      "no_minors": true,
       "scene_types": [
         "dramatic_focus"
       ],
