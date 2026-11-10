@@ -118,6 +118,8 @@ def _validate_channel(channel_id: str, cfg: dict[str, Any]) -> None:
             raise ConfigError(f"{channel_id}: {key} içinde geçersiz değer {unknown}; izin verilenler: {allowed}")
     if cfg.get("renderer", "remotion") not in VALID_RENDERERS:
         raise ConfigError(f"{channel_id}: renderer {VALID_RENDERERS} değerlerinden biri olmalı")
+    if not isinstance(cfg.get("no_minors", False), bool):
+        raise ConfigError(f"{channel_id}: no_minors true/false olmalı")
     if not isinstance(cfg.get("story_bible", False), bool):
         raise ConfigError(f"{channel_id}: story_bible true/false olmalı")
     if "series_tag" in cfg and "{n}" not in str(cfg["series_tag"]):

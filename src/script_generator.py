@@ -242,6 +242,35 @@ def _popular_block(channel: dict[str, Any]) -> str:
     )
 
 
+MINOR_TERMS = re.compile(
+    r"\b(girl|girls|boy|boys|child|children|kid|kids|toddler|toddlers|infant|teen|teens|teenager|teenagers|"
+    r"schoolgirl|schoolboy|daughter|son|youngster|youngsters|little one|little ones|orphan boy|orphan girl|minor|minors)\b",
+    re.IGNORECASE,
+)
+
+
+def _safety_block(channel: dict[str, Any]) -> str:
+    """YouTube 'çocukların güvenliği' politikası: çocuk/reşit olmayan karakter içermeyen hikayeler (ch5, ch6)."""
+    if not channel.get("no_minors"):
+        return ""
+    return (
+        "CHILD SAFETY (strict, a violation gets the channel penalised): NEVER include a child, baby human, teenager or any "
+        "minor in the story, the narration or the images: no girl, boy, kid, child, toddler, son, daughter or student. Every "
+        "human in the story is clearly an ADULT (an elderly keeper, a ranger, a fisherman, a farmer, a nurse, a hiker). "
+        "Never show a person of any age in real danger together with a minor-like figure. The hero is the animal; humans are "
+        "adults who stay safe. Keep the story gentle and free of suffering, injury or death.\n"
+    )
+
+
+def _check_minors(channel: dict[str, Any], narration: str, image_prompt: str) -> None:
+    if not channel.get("no_minors"):
+        return
+    for label, text in (("anlatım", narration), ("görsel prompt'u", image_prompt)):
+        found = MINOR_TERMS.search(text)
+        if found:
+            raise ValueError(f"Çocuk/reşit olmayan karakter ifadesi ({label}): '{found.group(0)}'")
+
+
 def _bible_block(channel: dict[str, Any]) -> str:
     """Hikaye kahramanlı kanallarda (mitoloji, korku, hayvan hikayeleri) sabit karakter; diğerlerinde her sahne farklı görsel."""
     if not channel.get("story_bible"):
@@ -307,7 +336,7 @@ SCRIPT RULES:
 - Do not use emojis, hashtags, stage directions or scene numbers inside narration.
 
 {_bible_block(channel)}
-ON-SCREEN LABELS:
+{_safety_block(channel)}ON-SCREEN LABELS:
 - label: a 1 to 4 word caption shown on screen when the time or place changes, for example "Kyoto, 1185", "4 years later", "That night", "Deep below". Leave it as an empty string otherwise. Use at most 3 labels per video, never in scene 1 or the last scene.
 
 IMAGE PROMPT RULES (one per scene, matching that scene's narration):
@@ -586,6 +615,7 @@ def _finalize(
     if len(scenes) < MIN_SCENES:
         raise ValueError(f"Yetersiz sahne sayısı: {len(scenes)} (en az {MIN_SCENES})")
 
+    _check_minors(channel, "", " ".join([raw.setting, *(c.visual + " " + c.name for c in raw.characters)]))
     bible = bool(channel.get("story_bible"))
     visuals = (
         {_normalize(c.name): _trim(c.visual, MAX_IDENTITY_CHARS) for c in raw.characters[:2] if c.name.strip() and c.visual.strip()}
@@ -602,6 +632,7 @@ def _finalize(
         narration = _clean(scene.narration)
         if not narration:
             raise ValueError("Boş narration içeren sahne var")
+        _check_minors(channel, narration, scene.image_prompt)
         identity = [visuals[k] for k in (_normalize(n) for n in scene.characters_present) if k in visuals]
         used_setting = setting if scene.show_setting and setting_scenes < MAX_SETTING_SCENES else ""
         setting_scenes += 1 if used_setting else 0

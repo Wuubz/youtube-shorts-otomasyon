@@ -473,6 +473,7 @@
       ],
       "renderer": "remotion",
       "story_bible": true,
+      "no_minors": true,
       "scene_types": [
         "mind_scan",
         "dramatic_focus"
@@ -562,6 +563,7 @@
       ],
       "renderer": "remotion",
       "story_bible": true,
+      "no_minors": true,
       "scene_types": [
         "dramatic_focus"
       ],
