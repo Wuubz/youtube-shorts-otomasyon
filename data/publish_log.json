@@ -1,22 +1,4 @@
 {
-  "2026-11-05": {
-    "0": [
-      "ch6_universal_stories",
-      "ch3_dark_psychology",
-      "ch1_cosmic_whatif",
-      "ch2_dark_history",
-      "ch4_epic_mythology",
-      "ch5_midnight_horror"
-    ],
-    "1": [
-      "ch6_universal_stories",
-      "ch3_dark_psychology",
-      "ch1_cosmic_whatif",
-      "ch2_dark_history",
-      "ch4_epic_mythology",
-      "ch5_midnight_horror"
-    ]
-  },
   "2026-11-06": {
     "0": [
       "ch6_universal_stories",
@@ -123,6 +105,11 @@
       "ch2_dark_history",
       "ch4_epic_mythology",
       "ch5_midnight_horror"
+    ]
+  },
+  "2026-11-12": {
+    "0": [
+      "ch6_universal_stories"
     ]
   }
 }
