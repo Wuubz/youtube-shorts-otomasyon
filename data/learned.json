@@ -1,41 +1,41 @@
 {
   "ch1_cosmic_whatif": {
-    "updated": "2026-11-16",
-    "videos": 42,
+    "updated": "2026-11-23",
+    "videos": 56,
     "median_views": 24.5,
     "best": {
-      "title": "Andromeda Is Secretly Already Colliding With Us",
-      "views": 283
+      "title": "The Light Speed Journey That Stopps Time",
+      "views": 881
     },
     "winners": [
+      "The Light Speed Journey That Stopps Time",
       "Andromeda Is Secretly Already Colliding With Us",
       "Saturn's Ring Is Made of Alien Ocean Water",
-      "The Sunless Planet That Radiates Ghost Light",
-      "This Star Was Kicked Out Of Our Galaxy",
-      "This Galaxy Collision Should Not Exist"
+      "The Zombie Pulsar That Vaporizes Stars",
+      "The Sunless Planet That Radiates Ghost Light"
     ],
     "losers": [
       "This Phantom Force Should Not Exist",
       "The Star That Vanished Without an Explosion",
       "Earth's Core Is Secretly Younger Than Its Crust",
-      "The Invisible Doorway That Could Destroy Earth",
-      "What Happens If Stars Run on Dark Matter?"
+      "Our Universe Is Secretly Inside A Black Hole",
+      "The Invisible Doorway That Could Destroy Earth"
     ],
     "by_length": {
       "short": {
-        "videos": 24,
-        "median_views": 17.5
+        "videos": 37,
+        "median_views": 22
       },
       "long": {
-        "videos": 18,
-        "median_views": 33.0
+        "videos": 19,
+        "median_views": 28
       }
     }
   },
   "ch2_dark_history": {
-    "updated": "2026-11-16",
-    "videos": 42,
-    "median_views": 11.0,
+    "updated": "2026-11-23",
+    "videos": 56,
+    "median_views": 13.5,
     "best": {
       "title": "Why Nobody Can Explain the Kailasa Temple",
       "views": 218
@@ -50,87 +50,87 @@
     "losers": [
       "The Empire That Vanished Overnight",
       "The Impossible 10-Foot Giant of Cardiff",
+      "The Impossible 129 Lost Men of Franklin",
       "The Darkest Scientific Lie in History",
-      "The Ghost Watchers That Guarded a Silent Coast for 3000 Years",
-      "The Impossible 10 Bronze Tablets of Byblos"
+      "The Ghost Watchers That Guarded a Silent Coast for 3000 Years"
     ],
     "by_length": {
       "short": {
-        "videos": 18,
-        "median_views": 9.5
+        "videos": 28,
+        "median_views": 11.0
       },
       "long": {
-        "videos": 24,
-        "median_views": 18.0
+        "videos": 28,
+        "median_views": 18.5
       }
     }
   },
   "ch3_dark_psychology": {
-    "updated": "2026-11-16",
-    "videos": 39,
-    "median_views": 102,
+    "updated": "2026-11-23",
+    "videos": 53,
+    "median_views": 73,
     "best": {
       "title": "Why Fleeing Awkward Tension Destroys Your Respect",
       "views": 1065
     },
     "winners": [
       "Why Fleeing Awkward Tension Destroys Your Respect",
+      "The Stoic Secret to Stopping Overthinking",
       "Why Agreeing With Everyone Destroys Respect",
       "The Stoic Secret to Never Feeling Betrayed",
-      "Why Explaining Your Decisions Destroys Authority",
-      "3 Signs Someone Is Exploiting Your Overthinking"
+      "Why Explaining Your Decisions Destroys Authority"
     ],
     "losers": [
       "Why Constant Nodding Makes People Lose Respect For You",
+      "Why Mirroring Your Partner Destroys Real Attraction",
       "Why Answering Personal Questions Destroys Respect",
-      "Why Seeking Company When Lonely Destroys Respect",
-      "Why Apologizing First Makes People Lose Respect For You",
-      "Why Agreeing With the Room Destroys Your Authority"
+      "Why Mirroring Someone Makes You Lose Authority",
+      "Why Seeking Company When Lonely Destroys Respect"
     ],
     "by_length": {
       "long": {
-        "videos": 39,
-        "median_views": 102
+        "videos": 53,
+        "median_views": 73
       }
     }
   },
   "ch4_epic_mythology": {
-    "updated": "2026-11-16",
-    "videos": 39,
-    "median_views": 30,
+    "updated": "2026-11-23",
+    "videos": 53,
+    "median_views": 31,
     "best": {
       "title": "The God Who Orchestrated His Own Death",
       "views": 1283
     },
     "winners": [
       "The God Who Orchestrated His Own Death",
+      "Anubis Never Forgave Seth",
       "The Most Tragic Love Story in Egyptian Mythology",
       "Why Even The Gods Feared Kronos",
-      "The Darkest Mythological Love Story Ever",
-      "When Poseidon Met Artemis"
+      "Apophis Never Forgave Ra"
     ],
     "losers": [
+      "When Hermes Met Tiamat In The Void",
       "The Darkest Prophecy Ever Told About Prince Yamato Takeru",
-      "When Isis Met Ra",
       "Loki Was Not What The Myths Say",
       "The God Who Demanded a Princess",
       "The Real Reason Ra Demands Your Shattered Memories"
     ],
     "by_length": {
       "short": {
-        "videos": 7,
-        "median_views": 21
+        "videos": 10,
+        "median_views": 19.5
       },
       "long": {
-        "videos": 32,
-        "median_views": 36.0
+        "videos": 43,
+        "median_views": 43
       }
     }
   },
   "ch5_midnight_horror": {
-    "updated": "2026-11-16",
-    "videos": 39,
-    "median_views": 8,
+    "updated": "2026-11-23",
+    "videos": 54,
+    "median_views": 8.0,
     "best": {
       "title": "There Was Someone In The School Bell Tower",
       "views": 260
@@ -140,29 +140,29 @@
       "I Found A Wooden Mantle Clock In My Estate Sale",
       "There Was Someone Inside My Walls",
       "I Found A Brass Intercom In My Attic",
-      "I Found A Stranger In My Phone Photos"
+      "There Was Someone At Mile Marker 47"
     ],
     "losers": [
       "The Harvest Effigy That Whispered My Name",
       "There Was Someone Sewing My Shadow",
       "The Vanity Mirror That Showed A Different House",
-      "The Silver Watch That Ticked Backward",
-      "I Found A Jar Of Nails In My Wall"
+      "The Service Elevator That Served The Ghost Floor",
+      "The Silver Watch That Ticked Backward"
     ],
     "by_length": {
       "short": {
-        "videos": 23,
-        "median_views": 11
+        "videos": 37,
+        "median_views": 8
       },
       "long": {
-        "videos": 16,
-        "median_views": 7.5
+        "videos": 17,
+        "median_views": 8
       }
     }
   },
   "ch6_universal_stories": {
-    "updated": "2026-11-16",
-    "videos": 39,
+    "updated": "2026-11-23",
+    "videos": 53,
     "median_views": 4,
     "best": {
       "title": "He Saved This Pup... Years Later It Saved Him",
@@ -171,9 +171,9 @@
     "winners": [
       "He Saved This Pup... Years Later It Saved Him",
       "This Llama Waited 3 Years For Her",
+      "This Street Cat Waited 4 Years For Sarah",
       "Everyone Laughed At This Owl. Then He Purred.",
-      "Everyone Laughed At This Dog. Then He Waited 5 Years.",
-      "The Three-Legged Dog Who Never Gave Up"
+      "Everyone Laughed At This Dog. Then He Waited 5 Years."
     ],
     "losers": [
       "Why Did A Wild Fox Sneak Inside This Cabin?",
@@ -184,7 +184,7 @@
     ],
     "by_length": {
       "long": {
-        "videos": 39,
+        "videos": 53,
         "median_views": 4
       }
     }
