@@ -770,7 +770,8 @@
       "Hotel elevator: An adult resident takes an elevator that stops at a floor where everyone is listening.",
       "Antique hearing aid: an elderly man discovers his vintage device picks up whispers from the future.",
       "An antique wilderness compass that tracks something unseen in the forest.",
-      "Doppelganger mirror: An antique vanity mirror reflects an empty hallway while the room behind it fills with strange furniture."
+      "Doppelganger mirror: An antique vanity mirror reflects an empty hallway while the room behind it fills with strange furniture.",
+      "Rotary telephone: An elderly watchmaker receives midnight calls from an old payphone outside that burned down in 1984."
     ],
     "themes": [
       "Sleep paralysis and nightmare creatures",
@@ -831,10 +832,10 @@
       "Hotel, elevator and apartment building horror",
       "Sounds in the dark: knocking, whispers and footsteps",
       "Forest, camping and wilderness horror",
-      "Doppelgangers and mirror horror"
+      "Doppelgangers and mirror horror",
+      "Urban legends and unsettling phone calls"
     ],
     "titles": [
-      "Do Not Answer If The Porcelain Doll Whispers #Shorts",
       "The Sanatorium Lightbox That Showed My Ribs #Shorts",
       "There Was Someone Inside The Service Lift #Shorts",
       "I Found A Brass Intercom In My Attic #Shorts",
@@ -873,9 +874,10 @@
       "There Was Someone On Floor Twelve #Shorts",
       "There Was Someone Whispering Through My Hearing Aid #Shorts",
       "The Compass That Points To Nothing #Shorts",
-      "I Found A Strange Vanity Mirror In My Hallway #Shorts"
+      "I Found A Strange Vanity Mirror In My Hallway #Shorts",
+      "The Payphone That Called From 1984 #Shorts"
     ],
-    "count": 65
+    "count": 66
   },
   "ch6_universal_stories": {
     "topics": [
